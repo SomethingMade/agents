@@ -138,7 +138,7 @@
     <div class="loading-box">
         <div class="spinner"></div>
         <div class="loading-text" id="loading-text">Loading...</div>
-        .loading-subtext" id="loading-subtext"></div>
+        <div class="loading-subtext" id="loading-subtext"></div>
     </div>
 </div>
 
@@ -280,7 +280,7 @@
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // --- CREDENTIALS CONFIG ---
+    // --- YOUR CREDENTIALS ---
     const firebaseConfig = {
         apiKey: "AIzaSyBQSPwpVbGrdCuOoyitAeWQHIeipj2MgIY",
         authDomain: "newstart-64c43.firebaseapp.com",
@@ -293,9 +293,9 @@
 
     const SHIPDAY_KEY = "K5a8wQJF3f.az2zfrhgzwxK9JONI2y8";
     
-    // Meta WhatsApp Cloud API credentials
-    const WA_PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID"; 
-    const WA_ACCESS_TOKEN = "YOUR_META_ACCESS_TOKEN"; 
+    // Add your Meta WhatsApp API credentials here
+    const WA_PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID"; // e.g. "1234567890"
+    const WA_ACCESS_TOKEN = "YOUR_META_ACCESS_TOKEN"; // e.g. "EAAO...xyz"
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -373,11 +373,62 @@
     };
     window.signOutAgent = async () => { showLoading("Signing out..."); await signOut(auth); hideLoading(); };
 
-    // ============ WhatsApp Sending Utility Function ============
-    window.sendWhatsAppAPI = async (phone, messageText) => {
+    // ============ Dispatch Logic ============
+    window.processWalkInOrder = async () => {
+        const btn = document.getElementById('dispatch-btn');
+        const routeType = document.getElementById('route-type').value;
+        const senderName = document.getElementById('sender-name').value;
+        const receiverName = document.getElementById('receiver-name').value;
+        const finalDest = routeType === 'door' ? document.getElementById('delivery-address').value : document.getElementById('destination-branch').value;
+        
+        if(!senderName || !receiverName || !finalDest) return showResultModal('error', 'Missing Data', 'Please complete all fields.');
+
+        btn.disabled = true;
+        showLoading("Dispatching...", "Syncing with Shipday Network");
+        const orderId = "CG-WALK-" + Math.floor(1000 + Math.random() * 9000);
+        const pSize = document.getElementById('package-size').value.split('|');
+
+        const payload = {
+            orderNumber: orderId,
+            customerName: receiverName,
+            customerPhoneNumber: document.getElementById('receiver-phone').value,
+            customerAddress: finalDest,
+            restaurantName: `Sender: ${senderName}`,
+            restaurantPhoneNumber: document.getElementById('sender-phone').value,
+            restaurantAddress: document.getElementById('origin-branch').value,
+            orderItem: [{ name: pSize[0], unitPrice: parseInt(pSize[1]), quantity: 1 }],
+            totalOrderCost: parseInt(pSize[1]),
+            status: 'placed',
+            source: 'agent_dashboard',
+            timestamp: Date.now()
+        };
+
+        try {
+            await set(push(ref(database, 'orders')), payload);
+
+            const sdRes = await fetch("https://api.shipday.com/orders", {
+                method: "POST",
+                headers: { "Authorization": `Basic ${SHIPDAY_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!sdRes.ok) throw new Error("Shipday Dispatch Failed: " + sdRes.status);
+
+            hideLoading();
+            showResultModal('success', 'Dispatched', `Order ${orderId} successfully dispatched to the driver network.`);
+            document.querySelectorAll('input').forEach(i => i.value = '');
+        } catch (error) {
+            hideLoading();
+            showResultModal('error', 'Failed', error.message);
+        } finally { btn.disabled = false; }
+    };
+
+    // ============ WhatsApp API Logic ============
+    window.sendWhatsAppAPI = async (phone, orderNumber) => {
+        // Clean phone number (Ensure correct country code, e.g., 27 for SA)
         let cleanPhone = phone.replace(/\D/g, '');
         if (cleanPhone.startsWith('0')) {
-            cleanPhone = '27' + cleanPhone.substring(1); // Standardized country code prefix format
+            cleanPhone = '27' + cleanPhone.substring(1); 
         }
 
         const payload = {
@@ -387,7 +438,7 @@
             type: "text",
             text: {
                 preview_url: false,
-                body: messageText
+                body: orderNumber
             }
         };
 
@@ -402,77 +453,22 @@
             });
 
             const data = await response.json();
+            
             if (!response.ok) {
-                console.warn("WhatsApp API Delivery Issue:", data.error?.message);
+                console.warn("WhatsApp API failed:", data.error?.message);
+                // We do not throw here to prevent the main UI from breaking if WhatsApp API token expires
             }
+            
             return true;
         } catch (error) {
-            console.error("WhatsApp Request Error Exception:", error);
+            console.error("WhatsApp API Error:", error);
         }
-    };
-
-    // ============ Dispatch Logic ============
-    window.processWalkInOrder = async () => {
-        const btn = document.getElementById('dispatch-btn');
-        const routeType = document.getElementById('route-type').value;
-        const senderName = document.getElementById('sender-name').value;
-        const receiverName = document.getElementById('receiver-name').value;
-        const receiverPhone = document.getElementById('receiver-phone').value;
-        const finalDest = routeType === 'door' ? document.getElementById('delivery-address').value : document.getElementById('destination-branch').value;
-        
-        if(!senderName || !receiverName || !finalDest) return showResultModal('error', 'Missing Data', 'Please complete all fields.');
-
-        btn.disabled = true;
-        showLoading("Dispatching...", "Syncing with Shipday Network & Alerting Client");
-        const orderId = "CG-WALK-" + Math.floor(1000 + Math.random() * 9000);
-        const pSize = document.getElementById('package-size').value.split('|');
-
-        const payload = {
-            orderNumber: orderId,
-            customerName: receiverName,
-            customerPhoneNumber: receiverPhone,
-            customerAddress: finalDest,
-            restaurantName: `Sender: ${senderName}`,
-            restaurantPhoneNumber: document.getElementById('sender-phone').value,
-            restaurantAddress: document.getElementById('origin-branch').value,
-            orderItem: [{ name: pSize[0], unitPrice: parseInt(pSize[1]), quantity: 1 }],
-            totalOrderCost: parseInt(pSize[1]),
-            status: 'placed',
-            source: 'agent_dashboard',
-            timestamp: Date.now()
-        };
-
-        try {
-            // Save to Firebase database tracking cluster
-            await set(push(ref(database, 'orders')), payload);
-
-            // Sync dispatch data out to Shipday API platform
-            const sdRes = await fetch("https://api.shipday.com/orders", {
-                method: "POST",
-                headers: { "Authorization": `Basic ${SHIPDAY_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            if (!sdRes.ok) throw new Error("Shipday Dispatch Failed: " + sdRes.status);
-
-            // Trigger Automated WhatsApp Event 1: Send client name and new tracking code
-            if (receiverPhone) {
-                const welcomeTemplate = `📦 *Pace Logistics Dispatch*\n\nHello *${receiverName}*,\nYour parcel has been logged into our network system.\n\n• *Tracking ID:* ${orderId}\n\nThank you for choosing Pace Logistics for your delivery! 🚀`;
-                await sendWhatsAppAPI(receiverPhone, welcomeTemplate);
-            }
-
-            hideLoading();
-            showResultModal('success', 'Dispatched', `Order ${orderId} successfully processed and notification sent.`);
-            document.querySelectorAll('input').forEach(i => i.value = '');
-        } catch (error) {
-            hideLoading();
-            showResultModal('error', 'Failed', error.message);
-        } finally { btn.disabled = false; }
     };
 
     // ============ Tracking & Collections Logic ============
     window.renderCollectionResults = (firebaseOrders, activeShipdayOrders = []) => {
         const resultsContainer = document.getElementById('collection-results');
+        
         const hasOrders = Object.keys(firebaseOrders).length > 0;
         resultsContainer.style.display = hasOrders ? 'grid' : 'block';
         
@@ -484,7 +480,9 @@
 
         let html = '';
         sortedOrders.forEach(([orderId, order]) => {
+            
             const shipdayMatch = activeShipdayOrders.find(sd => sd.orderNumber === order.orderNumber);
+            
             let displayStatus = (order.status || 'placed').replace(/_/g, ' ').toUpperCase();
             let badgeClass = order.status || 'placed';
             
@@ -623,27 +621,31 @@
     window.markAsCollected = async (orderId) => {
         showLoading("Updating...", "Securing in Firebase & Notifying Client");
         try {
+            // Fetch existing data so we can send the WhatsApp API message
             const orderRef = ref(database, `orders/${orderId}`);
             const snapshot = await get(orderRef);
             
-            if (!snapshot.exists()) throw new Error("Order lookup failed.");
+            if (!snapshot.exists()) throw new Error("Order not found");
             const orderData = snapshot.val();
 
-            // 1. Update order metrics configuration locally inside Firebase nodes
+            // 1. Update Firebase
             await update(orderRef, { 
                 status: 'collected', 
                 collectedAtBranch: true,
                 statusUpdatedAt: Date.now()
             });
 
-            // Trigger Automated WhatsApp Event 2: Send appreciation thank you text sequence
+            // 2. Fire the WhatsApp API
             if (orderData.customerPhoneNumber) {
-                const thankYouTemplate = `✅ *Pace Logistics Handover*\n\nHi *${orderData.customerName || 'Customer'}*,\nYour parcel (*${orderData.orderNumber}*) has been successfully handed over and collected!\n\nWe truly appreciate your business and thank you for choosing our courier service. We hope to ship with you again soon! 🙏✨`;
-                await sendWhatsAppAPI(orderData.customerPhoneNumber, thankYouTemplate);
+                await sendWhatsAppAPI(
+                    orderData.customerPhoneNumber, 
+                    orderData.orderNumber
+                );
             }
 
             hideLoading();
             
+            // Instantly update UI without making another database read
             const card = document.getElementById(`agent-card-${orderId}`);
             if (card) {
                 const btn = card.querySelector('.btn-submit');
