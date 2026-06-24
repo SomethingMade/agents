@@ -80,58 +80,19 @@
         .divider-text::before { content: ""; position: absolute; left: 0; top: 50%; width: 100%; height: 1px; background: #e4e4e7; z-index: 1; }
         .divider-text span { background: #f4f4f5; padding: 0 16px; font-size: 11px; font-weight: 700; color: #a1a1aa; position: relative; z-index: 2; text-transform: uppercase; }
 
-        /* Collections Search Layout (Responsive Grid) */
-        .collections-search-grid {
-            max-width: 680px;
-            margin: 0 auto;
-        }
-
+        /* Collections Search Layout */
+        .collections-search-grid { max-width: 680px; margin: 0 auto; }
         @media (min-width: 1024px) {
-            .collections-search-grid {
-                max-width: 100%;
-                display: grid;
-                grid-template-columns: 1fr auto 1fr;
-                gap: 24px;
-                align-items: stretch;
-            }
-            .collections-search-grid .collection-card {
-                margin-bottom: 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-            .collections-search-grid .divider-text {
-                margin: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .collections-search-grid .divider-text::before {
-                top: 0;
-                left: 50%;
-                width: 1.5px;
-                height: 100%;
-                transform: translateX(-50%);
-            }
-            .collections-search-grid .divider-text span {
-                padding: 12px 4px;
-                line-height: 1;
-            }
+            .collections-search-grid { max-width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: stretch; }
+            .collections-search-grid .collection-card { margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; }
+            .collections-search-grid .divider-text { margin: 0; display: flex; align-items: center; justify-content: center; }
+            .collections-search-grid .divider-text::before { top: 0; left: 50%; width: 1.5px; height: 100%; transform: translateX(-50%); }
+            .collections-search-grid .divider-text span { padding: 12px 4px; line-height: 1; }
         }
 
-        /* Collection Results - Grid View */
-        #collection-results {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-            gap: 24px;
-            margin-top: 40px;
-            width: 100%;
-        }
-
-        /* Ensure the empty state remains centered */
-        #collection-results:has(.empty-state) {
-            display: block;
-        }
+        /* Collection Results */
+        #collection-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 24px; margin-top: 40px; width: 100%; }
+        #collection-results:has(.empty-state) { display: block; }
 
         /* Order Cards & Shipday Integration */
         .order-result-card { border: 1.5px solid #e4e4e7; border-radius: 16px; padding: 24px; margin-bottom: 16px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
@@ -319,6 +280,7 @@
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+    // --- YOUR CREDENTIALS ---
     const firebaseConfig = {
         apiKey: "AIzaSyBQSPwpVbGrdCuOoyitAeWQHIeipj2MgIY",
         authDomain: "newstart-64c43.firebaseapp.com",
@@ -330,6 +292,10 @@
     };
 
     const SHIPDAY_KEY = "K5a8wQJF3f.az2zfrhgzwxK9JONI2y8";
+    
+    // Add your Meta WhatsApp API credentials here
+    const WA_PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID"; // e.g. "1234567890"
+    const WA_ACCESS_TOKEN = "YOUR_META_ACCESS_TOKEN"; // e.g. "EAAO...xyz"
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -375,7 +341,6 @@
 
     function escapeHtml(str) { return (str||'').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-    // Map Shipday standard statuses to UI Badges
     function mapShipdayStatus(state) {
         const map = {
             'ACCEPTED': { text: 'Pending Dispatch', class: 'placed' },
@@ -439,9 +404,8 @@
         };
 
         try {
-            await set(push(ref(database, 'orders')), payload); // Save to Firebase
+            await set(push(ref(database, 'orders')), payload);
 
-            // Dispatch to Shipday
             const sdRes = await fetch("https://api.shipday.com/orders", {
                 method: "POST",
                 headers: { "Authorization": `Basic ${SHIPDAY_KEY}`, "Content-Type": "application/json" },
@@ -459,17 +423,55 @@
         } finally { btn.disabled = false; }
     };
 
-    // ============ Tracking & Collections Logic ============
+    // ============ WhatsApp API Logic ============
+    window.sendWhatsAppAPI = async (phone, orderNumber) => {
+        // Clean phone number (Ensure correct country code, e.g., 27 for SA)
+        let cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.startsWith('0')) {
+            cleanPhone = '27' + cleanPhone.substring(1); 
+        }
 
-    // Render logic capable of merging Firebase data with Shipday Live Tracking
+        const payload = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanPhone,
+            type: "text",
+            text: {
+                preview_url: false,
+                body: orderNumber
+            }
+        };
+
+        try {
+            const response = await fetch(`https://graph.facebook.com/v18.0/${WA_PHONE_NUMBER_ID}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${WA_ACCESS_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                console.warn("WhatsApp API failed:", data.error?.message);
+                // We do not throw here to prevent the main UI from breaking if WhatsApp API token expires
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("WhatsApp API Error:", error);
+        }
+    };
+
+    // ============ Tracking & Collections Logic ============
     window.renderCollectionResults = (firebaseOrders, activeShipdayOrders = []) => {
         const resultsContainer = document.getElementById('collection-results');
         
-        // Dynamically assign grid or block layout based on content
         const hasOrders = Object.keys(firebaseOrders).length > 0;
         resultsContainer.style.display = hasOrders ? 'grid' : 'block';
         
-        // Sort orders descending by timestamp (Date and Time)
         const sortedOrders = Object.entries(firebaseOrders).sort((a, b) => {
             const timeA = a[1].timestamp || 0;
             const timeB = b[1].timestamp || 0;
@@ -479,13 +481,11 @@
         let html = '';
         sortedOrders.forEach(([orderId, order]) => {
             
-            // Try to find matching live data from Shipday API
             const shipdayMatch = activeShipdayOrders.find(sd => sd.orderNumber === order.orderNumber);
             
             let displayStatus = (order.status || 'placed').replace(/_/g, ' ').toUpperCase();
             let badgeClass = order.status || 'placed';
             
-            // If Shipday has live data, OVERRIDE the firebase status
             if (shipdayMatch && shipdayMatch.orderStatus?.orderState) {
                 const mapped = mapShipdayStatus(shipdayMatch.orderStatus.orderState);
                 displayStatus = mapped.text;
@@ -537,7 +537,6 @@
         resultsContainer.innerHTML = html || `<div class="empty-state"><i class="fa-solid fa-box-open"></i>No active orders found.</div>`;
     };
 
-    // Global fetch for active Shipday orders to cross-reference
     async function fetchActiveShipdayOrders() {
         try {
             const res = await fetch('https://api.shipday.com/orders', {
@@ -548,32 +547,25 @@
         return [];
     }
 
-    // Direct Search by Order Number (Targeted Fetch)
     window.searchByOrderNumber = async () => {
         const orderNum = document.getElementById('agent-order-num').value.trim();
         if (!orderNum) return showResultModal('error', 'Input Required', 'Please enter an order number.');
 
         showLoading("Locating Package...", "Querying internal DB and Shipday Network");
         try {
-            // 1. Fetch Firebase details
             const q = query(ref(database, 'orders'), orderByChild('orderNumber'), equalTo(orderNum));
             const snap = await get(q);
             
-            // 2. Fetch Live Shipday details explicitly using the target order number
             let shipdayData = [];
             try {
                 const sdRes = await fetch(`https://api.shipday.com/orders/${encodeURIComponent(orderNum)}`, {
                     headers: { 'Authorization': `Basic ${SHIPDAY_KEY}`, 'Accept': 'application/json' }
                 });
-                
                 if (sdRes.ok) {
                     const sdResponse = await sdRes.json();
-                    // Handle API SDK returning object wrapper vs array
                     shipdayData = Array.isArray(sdResponse) ? sdResponse : [sdResponse];
                 }
-            } catch (e) {
-                console.warn("Direct Shipday sync failed for order number:", e);
-            }
+            } catch (e) { console.warn("Direct Shipday sync failed for order number:", e); }
             
             hideLoading();
             
@@ -590,17 +582,13 @@
         }
     };
 
-    // Client History Search (Dual Fetch)
     window.searchByClientDetails = async () => {
         const term = document.getElementById('agent-global-search').value.trim().toLowerCase();
         if (!term) return showResultModal('error', 'Input Required', 'Enter details to search.');
 
         showLoading("Scanning Records...", "Finding client profile and live tracking data");
         try {
-            // 1. Get Live Shipday Data for cross-referencing later
             const shipdayDataPromise = fetchActiveShipdayOrders();
-
-            // 2. Fallback direct match search in Firebase 'orders' node
             const allOrdersSnap = await get(ref(database, 'orders'));
             let directMatches = {};
             
@@ -630,15 +618,31 @@
         }
     };
 
-    // Manual status override for collection
     window.markAsCollected = async (orderId) => {
-        showLoading("Updating...", "Securing in Firebase");
+        showLoading("Updating...", "Securing in Firebase & Notifying Client");
         try {
-            await update(ref(database, `orders/${orderId}`), { 
+            // Fetch existing data so we can send the WhatsApp API message
+            const orderRef = ref(database, `orders/${orderId}`);
+            const snapshot = await get(orderRef);
+            
+            if (!snapshot.exists()) throw new Error("Order not found");
+            const orderData = snapshot.val();
+
+            // 1. Update Firebase
+            await update(orderRef, { 
                 status: 'collected', 
                 collectedAtBranch: true,
                 statusUpdatedAt: Date.now()
             });
+
+            // 2. Fire the WhatsApp API
+            if (orderData.customerPhoneNumber) {
+                await sendWhatsAppAPI(
+                    orderData.customerPhoneNumber, 
+                    orderData.orderNumber
+                );
+            }
+
             hideLoading();
             
             // Instantly update UI without making another database read
