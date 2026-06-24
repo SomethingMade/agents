@@ -119,6 +119,10 @@
 
         .empty-state { text-align: center; padding: 40px 0; color: #a1a1aa; font-size: 14px; font-weight: 600; background: #fff; border-radius: 16px; border: 1.5px dashed #d4d4d8; }
         .empty-state i { font-size: 32px; display: block; margin-bottom: 12px; color: #d4d4d8; }
+
+        /* WhatsApp notification pill */
+        .wa-pill { display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
+        .wa-pill i { font-size: 10px; }
     </style>
 </head>
 <body>
@@ -295,7 +299,7 @@
     
     // Add your Meta WhatsApp API credentials here
     const WA_PHONE_NUMBER_ID = "YOUR_PHONE_NUMBER_ID"; // e.g. "1234567890"
-    const WA_ACCESS_TOKEN = "YOUR_META_ACCESS_TOKEN"; // e.g. "EAAO...xyz"
+    const WA_ACCESS_TOKEN = "YOUR_META_ACCESS_TOKEN";  // e.g. "EAAO...xyz"
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -377,24 +381,30 @@
     window.processWalkInOrder = async () => {
         const btn = document.getElementById('dispatch-btn');
         const routeType = document.getElementById('route-type').value;
-        const senderName = document.getElementById('sender-name').value;
-        const receiverName = document.getElementById('receiver-name').value;
-        const finalDest = routeType === 'door' ? document.getElementById('delivery-address').value : document.getElementById('destination-branch').value;
+        const senderName = document.getElementById('sender-name').value.trim();
+        const receiverName = document.getElementById('receiver-name').value.trim();
+        const receiverPhone = document.getElementById('receiver-phone').value.trim();
+        const finalDest = routeType === 'door'
+            ? document.getElementById('delivery-address').value.trim()
+            : document.getElementById('destination-branch').value;
         
-        if(!senderName || !receiverName || !finalDest) return showResultModal('error', 'Missing Data', 'Please complete all fields.');
+        if (!senderName || !receiverName || !finalDest) {
+            return showResultModal('error', 'Missing Data', 'Please complete all required fields.');
+        }
 
         btn.disabled = true;
         showLoading("Dispatching...", "Syncing with Shipday Network");
+
         const orderId = "CG-WALK-" + Math.floor(1000 + Math.random() * 9000);
         const pSize = document.getElementById('package-size').value.split('|');
 
         const payload = {
             orderNumber: orderId,
             customerName: receiverName,
-            customerPhoneNumber: document.getElementById('receiver-phone').value,
+            customerPhoneNumber: receiverPhone,
             customerAddress: finalDest,
             restaurantName: `Sender: ${senderName}`,
-            restaurantPhoneNumber: document.getElementById('sender-phone').value,
+            restaurantPhoneNumber: document.getElementById('sender-phone').value.trim(),
             restaurantAddress: document.getElementById('origin-branch').value,
             orderItem: [{ name: pSize[0], unitPrice: parseInt(pSize[1]), quantity: 1 }],
             totalOrderCost: parseInt(pSize[1]),
@@ -404,8 +414,10 @@
         };
 
         try {
+            // 1. Save to Firebase
             await set(push(ref(database, 'orders')), payload);
 
+            // 2. Dispatch to Shipday
             const sdRes = await fetch("https://api.shipday.com/orders", {
                 method: "POST",
                 headers: { "Authorization": `Basic ${SHIPDAY_KEY}`, "Content-Type": "application/json" },
@@ -414,31 +426,72 @@
 
             if (!sdRes.ok) throw new Error("Shipday Dispatch Failed: " + sdRes.status);
 
+            // 3. Send WhatsApp dispatch notification to recipient
+            if (receiverPhone) {
+                await sendWhatsAppAPI(receiverPhone, 'dispatch', {
+                    recipientName: receiverName,
+                    orderNumber: orderId
+                });
+            }
+
             hideLoading();
-            showResultModal('success', 'Dispatched', `Order ${orderId} successfully dispatched to the driver network.`);
+            showResultModal('success', 'Dispatched!', `Order ${orderId} dispatched to the driver network. WhatsApp notification sent to ${receiverName}.`);
             document.querySelectorAll('input').forEach(i => i.value = '');
+
         } catch (error) {
             hideLoading();
             showResultModal('error', 'Failed', error.message);
-        } finally { btn.disabled = false; }
+        } finally {
+            btn.disabled = false;
+        }
     };
 
     // ============ WhatsApp API Logic ============
-    window.sendWhatsAppAPI = async (phone, orderNumber) => {
-        // Clean phone number (Ensure correct country code, e.g., 27 for SA)
+    // messageType: 'dispatch' | 'collected'
+    // data: { recipientName, orderNumber }
+    window.sendWhatsAppAPI = async (phone, messageType, data = {}) => {
+        // Normalise to SA format (27XXXXXXXXX)
         let cleanPhone = phone.replace(/\D/g, '');
         if (cleanPhone.startsWith('0')) {
-            cleanPhone = '27' + cleanPhone.substring(1); 
+            cleanPhone = '27' + cleanPhone.substring(1);
         }
 
-        const payload = {
+        let messageBody = '';
+
+        if (messageType === 'dispatch') {
+            messageBody =
+`Hi ${data.recipientName || 'there'} 👋
+
+Your package has been dispatched with *Pace Logistics*!
+
+📦 *Order Number:* ${data.orderNumber}
+
+Please keep this number handy — you'll need it to track or collect your parcel. Our agent will reach out once your package is ready for collection.
+
+Thank you for choosing Pace Logistics! 🚀`;
+        }
+
+        if (messageType === 'collected') {
+            messageBody =
+`Hi ${data.recipientName || 'there'} 👋
+
+Great news! Your package *${data.orderNumber}* has been successfully handed over. ✅
+
+Thank you so much for choosing *Pace Logistics* — we truly appreciate your trust in us! We look forward to serving you again. 🙏
+
+— The Pace Logistics Team`;
+        }
+
+        if (!messageBody) return;
+
+        const waPayload = {
             messaging_product: "whatsapp",
             recipient_type: "individual",
             to: cleanPhone,
             type: "text",
             text: {
                 preview_url: false,
-                body: orderNumber
+                body: messageBody
             }
         };
 
@@ -449,16 +502,14 @@
                     'Authorization': `Bearer ${WA_ACCESS_TOKEN}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(waPayload)
             });
 
-            const data = await response.json();
-            
+            const resData = await response.json();
             if (!response.ok) {
-                console.warn("WhatsApp API failed:", data.error?.message);
-                // We do not throw here to prevent the main UI from breaking if WhatsApp API token expires
+                console.warn("WhatsApp API failed:", resData.error?.message);
+                // Non-blocking — don't throw, just warn
             }
-            
             return true;
         } catch (error) {
             console.error("WhatsApp API Error:", error);
@@ -473,14 +524,11 @@
         resultsContainer.style.display = hasOrders ? 'grid' : 'block';
         
         const sortedOrders = Object.entries(firebaseOrders).sort((a, b) => {
-            const timeA = a[1].timestamp || 0;
-            const timeB = b[1].timestamp || 0;
-            return timeB - timeA;
+            return (b[1].timestamp || 0) - (a[1].timestamp || 0);
         });
 
         let html = '';
         sortedOrders.forEach(([orderId, order]) => {
-            
             const shipdayMatch = activeShipdayOrders.find(sd => sd.orderNumber === order.orderNumber);
             
             let displayStatus = (order.status || 'placed').replace(/_/g, ' ').toUpperCase();
@@ -522,12 +570,13 @@
                     </div>
 
                     ${!isCompleted ? `
-                        <button class="btn-submit" style="margin-top: 10px; padding: 14px; background: #16a34a; box-shadow: none;" onclick="markAsCollected('${orderId}')">
+                        <button class="btn-submit" style="margin-top: 10px; padding: 14px; background: #16a34a; box-shadow: none;" onclick="markAsCollected('${orderId}', '${escapeHtml(order.customerPhoneNumber || '')}', '${escapeHtml(order.customerName || '')}', '${escapeHtml(order.orderNumber || '')}')">
                             <i class="fa-solid fa-check-double"></i> Mark Handed to Client
                         </button>
                     ` : `
                         <div style="margin-top: 10px; padding: 14px; background: #dcfce7; color: #16a34a; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px;">
                             <i class="fa-solid fa-circle-check"></i> Package Successfully Collected
+                            <span class="wa-pill"><i class="fa-brands fa-whatsapp"></i> Thank You Sent</span>
                         </div>
                     `}
                 </div>
@@ -618,42 +667,44 @@
         }
     };
 
-    window.markAsCollected = async (orderId) => {
-        showLoading("Updating...", "Securing in Firebase & Notifying Client");
+    // Now accepts phone, name and orderNumber directly from the rendered card
+    // to avoid an extra Firebase read
+    window.markAsCollected = async (orderId, customerPhone, customerName, orderNumber) => {
+        showLoading("Updating...", "Marking as collected & sending thank you message");
         try {
-            // Fetch existing data so we can send the WhatsApp API message
-            const orderRef = ref(database, `orders/${orderId}`);
-            const snapshot = await get(orderRef);
-            
-            if (!snapshot.exists()) throw new Error("Order not found");
-            const orderData = snapshot.val();
-
             // 1. Update Firebase
+            const orderRef = ref(database, `orders/${orderId}`);
             await update(orderRef, { 
                 status: 'collected', 
                 collectedAtBranch: true,
                 statusUpdatedAt: Date.now()
             });
 
-            // 2. Fire the WhatsApp API
-            if (orderData.customerPhoneNumber) {
-                await sendWhatsAppAPI(
-                    orderData.customerPhoneNumber, 
-                    orderData.orderNumber
-                );
+            // 2. Send WhatsApp thank-you message
+            if (customerPhone) {
+                await sendWhatsAppAPI(customerPhone, 'collected', {
+                    recipientName: customerName,
+                    orderNumber: orderNumber
+                });
             }
 
             hideLoading();
             
-            // Instantly update UI without making another database read
+            // 3. Update UI instantly — no extra DB read needed
             const card = document.getElementById(`agent-card-${orderId}`);
             if (card) {
                 const btn = card.querySelector('.btn-submit');
-                if (btn) btn.outerHTML = `<div style="margin-top: 10px; padding: 14px; background: #dcfce7; color: #16a34a; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-circle-check"></i> Package Successfully Collected</div>`;
-                
+                if (btn) {
+                    btn.outerHTML = `
+                        <div style="margin-top: 10px; padding: 14px; background: #dcfce7; color: #16a34a; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px;">
+                            <i class="fa-solid fa-circle-check"></i> Package Successfully Collected
+                            <span class="wa-pill"><i class="fa-brands fa-whatsapp"></i> Thank You Sent</span>
+                        </div>`;
+                }
                 const badge = card.querySelector('.status-badge');
                 if (badge) { badge.className = 'status-badge delivered'; badge.textContent = 'COLLECTED'; }
             }
+
         } catch (e) {
             hideLoading();
             showResultModal('error', 'Update Failed', e.message);
