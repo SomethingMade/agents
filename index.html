@@ -12,7 +12,7 @@
         body { font-family: 'Inter', sans-serif; background: #fafafa; color: #18181b; display: flex; height: 100vh; overflow: hidden; }
         
         /* Sidebar */
-        .sidebar { width: 280px; background: #09090b; color: #fff; display: flex; flex-direction: column; padding: 32px 24px; }
+        .sidebar { width: 280px; background: #09090b; color: #fff; display: flex; flex-direction: column; padding: 32px 24px; z-index: 10; }
         .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 12px; margin-bottom: 48px; letter-spacing: -0.5px; }
         .brand i { color: #3b82f6; }
         .nav-item { padding: 14px 16px; margin-bottom: 8px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px; color: #a1a1aa; }
@@ -35,81 +35,57 @@
         .form-group label { font-size: 12px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; }
         .form-control { padding: 14px 16px; border: 1.5px solid #e4e4e7; border-radius: 12px; font-size: 14px; outline: none; font-family: 'Inter', sans-serif; transition: all 0.2s ease; background: #fff; color: #18181b; }
         .form-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-        .form-control:disabled { background: #f4f4f5; color: #71717a; cursor: not-allowed; }
         
-        /* Submit Button */
+        /* Buttons */
         .btn-submit { width: 100%; padding: 18px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25); }
         .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35); }
-        .btn-submit:active { transform: translateY(1px); }
         .btn-submit:disabled { background: #a1a1aa; box-shadow: none; cursor: not-allowed; transform: none; }
 
-        /* Auth Overlay */
+        /* Overlays & Modals */
         #auth-overlay { position: fixed; inset: 0; background: #fff; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .auth-box { text-align: center; max-width: 320px; }
-
-        /* Global Loading Overlay */
-        #loading-overlay {
-            position: fixed; inset: 0; z-index: 2000; background: rgba(9, 9, 11, 0.45); backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center;
-        }
+        
+        #loading-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(9, 9, 11, 0.45); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; }
         #loading-overlay.active { display: flex; }
-        .loading-box {
-            background: #fff; border-radius: 20px; padding: 36px 44px; display: flex; flex-direction: column; align-items: center; gap: 18px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.25); min-width: 240px;
-        }
-        .spinner {
-            width: 42px; height: 42px; border-radius: 50%; border: 4px solid #e4e4e7; border-top-color: #3b82f6; animation: spin 0.7s linear infinite;
-        }
+        .loading-box { background: #fff; border-radius: 20px; padding: 36px 44px; display: flex; flex-direction: column; align-items: center; gap: 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); min-width: 240px; }
+        .spinner { width: 42px; height: 42px; border-radius: 50%; border: 4px solid #e4e4e7; border-top-color: #3b82f6; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { font-size: 14px; font-weight: 700; color: #18181b; letter-spacing: -0.2px; }
-        .loading-subtext { font-size: 12px; font-weight: 500; color: #a1a1aa; }
-
-        /* Custom Result Modal */
-        #result-modal-overlay {
-            position: fixed; inset: 0; z-index: 2100; background: rgba(9, 9, 11, 0.55); display: none; align-items: center; justify-content: center; padding: 20px;
-        }
+        
+        #result-modal-overlay { position: fixed; inset: 0; z-index: 2100; background: rgba(9, 9, 11, 0.55); display: none; align-items: center; justify-content: center; padding: 20px; }
         #result-modal-overlay.active { display: flex; }
-        .result-modal {
-            background: #fff; border-radius: 24px; padding: 40px 32px 32px; max-width: 380px; width: 100%; text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3); transform: scale(0.92); opacity: 0; animation: modalPop 0.22s ease forwards;
-        }
+        .result-modal { background: #fff; border-radius: 24px; padding: 40px 32px 32px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); transform: scale(0.92); opacity: 0; animation: modalPop 0.22s ease forwards; }
         @keyframes modalPop { to { transform: scale(1); opacity: 1; } }
         .result-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 30px; }
         .result-icon.success { background: #dcfce7; color: #16a34a; }
         .result-icon.error { background: #fee2e2; color: #dc2626; }
-        .result-title { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 10px; color: #09090b; }
-        .result-message { font-size: 14px; color: #71717a; line-height: 1.55; margin-bottom: 28px; }
-        .result-btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; color: #fff; }
+        .result-title { font-size: 19px; font-weight: 800; margin-bottom: 10px; color: #09090b; }
+        .result-message { font-size: 14px; color: #71717a; margin-bottom: 28px; line-height: 1.5; }
+        .result-btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; }
         .result-btn.success { background: #16a34a; }
-        .result-btn.success:hover { background: #15803d; }
         .result-btn.error { background: #18181b; }
-        .result-btn.error:hover { background: #27272a; }
 
-        /* Tab Views */
+        /* Tabs */
         .tab-view { display: none; }
         .tab-view.active { display: block; }
 
-        /* Collections UI Enhancements */
+        /* Collections Search UI */
         .collection-card { background: #fff; border: 1.5px solid #e4e4e7; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
         .collection-label { font-size: 12px; font-weight: 700; color: #71717a; margin-bottom: 12px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-        .search-row.border-style { display: flex; align-items: center; border: 2px solid #e4e4e7; border-radius: 12px; padding: 6px 6px 6px 16px; transition: border-color 0.15s; background: #fff; }
-        .search-row.border-style:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-        .search-icon { font-size: 16px; color: #a1a1aa; margin-right: 12px; }
+        .search-row { display: flex; align-items: center; border: 2px solid #e4e4e7; border-radius: 12px; padding: 6px 6px 6px 16px; transition: border-color 0.15s; background: #fff; }
+        .search-row:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
         .search-input { flex: 1; border: none; outline: none; font-size: 14px; color: #18181b; background: transparent; font-family: 'Inter', sans-serif; }
-        .search-input::placeholder { color: #a1a1aa; }
         .action-btn { background: #18181b; color: #fff; border: none; border-radius: 9px; padding: 12px 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
         .action-btn:hover { background: #27272a; }
-        .action-btn:active { transform: scale(0.98); }
         .divider-text { text-align: center; position: relative; margin: 24px 0; }
         .divider-text::before { content: ""; position: absolute; left: 0; top: 50%; width: 100%; height: 1px; background: #e4e4e7; z-index: 1; }
         .divider-text span { background: #f4f4f5; padding: 0 16px; font-size: 11px; font-weight: 700; color: #a1a1aa; position: relative; z-index: 2; text-transform: uppercase; }
 
-        /* Order Result Cards */
+        /* Order Cards & Shipday Integration */
         .order-result-card { border: 1.5px solid #e4e4e7; border-radius: 16px; padding: 24px; margin-bottom: 16px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
-        .order-result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+        .order-result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
         .order-result-id { font-size: 18px; font-weight: 800; color: #09090b; letter-spacing: -0.3px; }
         .order-result-sub { font-size: 12px; color: #a1a1aa; font-weight: 600; margin-top: 2px; }
-        .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; background: #fafafa; padding: 16px; border-radius: 12px; }
+        .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; background: #fafafa; padding: 16px; border-radius: 12px; border: 1px solid #f4f4f5; }
         .order-detail-item label { display: block; font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
         .order-detail-item div { font-size: 14px; font-weight: 600; color: #18181b; }
         
@@ -117,8 +93,15 @@
         .status-badge.placed { background: #dbeafe; color: #1d4ed8; }
         .status-badge.ready_for_collection { background: #fef9c3; color: #a16207; }
         .status-badge.out_for_delivery { background: #e0e7ff; color: #4338ca; }
-        .status-badge.collected, .status-badge.delivered { background: #dcfce7; color: #16a34a; }
+        .status-badge.delivered, .status-badge.collected { background: #dcfce7; color: #16a34a; }
         .status-badge.cancelled { background: #fee2e2; color: #dc2626; }
+
+        /* Shipday Live Tracking Box */
+        .shipday-live-box { margin-bottom: 16px; padding: 16px; background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 12px; }
+        .shipday-live-header { font-size: 11px; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; }
+        .shipday-live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .shipday-label { font-size: 11px; color: #0369a1; font-weight: 700; display: block; text-transform: uppercase; margin-bottom: 2px;}
+        .shipday-value { font-size: 13px; font-weight: 700; color: #082f49; }
 
         .empty-state { text-align: center; padding: 40px 0; color: #a1a1aa; font-size: 14px; font-weight: 600; background: #fff; border-radius: 16px; border: 1.5px dashed #d4d4d8; }
         .empty-state i { font-size: 32px; display: block; margin-bottom: 12px; color: #d4d4d8; }
@@ -126,17 +109,19 @@
 </head>
 <body>
 
+<!-- Authentication Overlay -->
 <div id="auth-overlay">
     <div class="auth-box">
         <div style="font-size: 48px; margin-bottom: 24px; color: #18181b;"><i class="fa-solid fa-user-shield"></i></div>
         <h2 style="margin-bottom: 12px; font-weight: 800; letter-spacing: -0.5px;">Agent Portal</h2>
         <p style="color: #71717a; font-size: 15px; margin-bottom: 32px;">Please sign in with your authorized agent account to continue.</p>
-        <button onclick="signInAgent()" style="width: 100%; padding: 16px; background: #18181b; color: #fff; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s;">
+        <button onclick="signInAgent()" style="width: 100%; padding: 16px; background: #18181b; color: #fff; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">
             <i class="fa-brands fa-google" style="margin-right: 8px;"></i> Sign in with Google
         </button>
     </div>
 </div>
 
+<!-- Global Loading Overlay -->
 <div id="loading-overlay">
     <div class="loading-box">
         <div class="spinner"></div>
@@ -145,6 +130,7 @@
     </div>
 </div>
 
+<!-- Result Modal -->
 <div id="result-modal-overlay">
     <div class="result-modal">
         <div class="result-icon" id="result-icon"><i class="fa-solid fa-check"></i></div>
@@ -154,14 +140,15 @@
     </div>
 </div>
 
+<!-- Sidebar -->
 <div class="sidebar">
     <div class="brand"><i class="fa-solid fa-truck-fast"></i> CourierGo</div>
     <div class="nav-item active" id="nav-dispatch" onclick="switchTab('dispatch')"><i class="fa-solid fa-layer-group"></i> Walk-in Dispatch</div>
-    <div class="nav-item" id="nav-collections" onclick="switchTab('collections')"><i class="fa-solid fa-box-open"></i> Collections</div>
-    <div class="nav-item"><i class="fa-solid fa-clipboard-list"></i> Daily Log</div>
+    <div class="nav-item" id="nav-collections" onclick="switchTab('collections')"><i class="fa-solid fa-box-open"></i> Live Tracker & Collection</div>
     <div style="margin-top: auto;" class="nav-item" onclick="signOutAgent()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</div>
 </div>
 
+<!-- Main Content Area -->
 <div class="main-content">
     <div class="header">
         <h1 id="page-title">New Dispatch Order</h1>
@@ -170,12 +157,13 @@
         </div>
     </div>
 
+    <!-- TAB 1: Dispatch -->
     <div id="view-dispatch" class="tab-view active">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-route"></i> 1. Route Configuration</div>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Origin Branch (Drop-off Location)</label>
+                    <label>Origin Branch</label>
                     <select id="origin-branch" class="form-control">
                         <option value="The Office ( Town )">The Office ( Town )</option>
                         <option value="The Office ( Mahwelereng )">The Office ( Mahwelereng )</option>
@@ -194,36 +182,21 @@
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-user"></i> 2. Client Details (Sender)</div>
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="sender-name" class="form-control" placeholder="e.g. John Doe">
-                </div>
-                <div class="form-group">
-                    <label>Mobile Number</label>
-                    <input type="tel" id="sender-phone" class="form-control" placeholder="060 123 4567">
-                </div>
-                <div class="form-group">
-                    <label>Email (Optional)</label>
-                    <input type="email" id="sender-email" class="form-control" placeholder="client@example.com">
-                </div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="sender-name" class="form-control"></div>
+                <div class="form-group"><label>Mobile Number</label><input type="tel" id="sender-phone" class="form-control"></div>
+                <div class="form-group"><label>Email (Optional)</label><input type="email" id="sender-email" class="form-control"></div>
             </div>
         </div>
 
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-location-dot"></i> 3. Destination Details</div>
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Recipient Name</label>
-                    <input type="text" id="receiver-name" class="form-control" placeholder="e.g. Jane Smith">
-                </div>
-                <div class="form-group">
-                    <label>Recipient Phone</label>
-                    <input type="tel" id="receiver-phone" class="form-control" placeholder="071 987 6543">
-                </div>
+                <div class="form-group"><label>Recipient Name</label><input type="text" id="receiver-name" class="form-control"></div>
+                <div class="form-group"><label>Recipient Phone</label><input type="tel" id="receiver-phone" class="form-control"></div>
                 
                 <div class="form-group" style="grid-column: span 2;" id="group-address">
                     <label>Delivery Address</label>
-                    <input type="text" id="delivery-address" class="form-control" placeholder="Enter full street address for delivery">
+                    <input type="text" id="delivery-address" class="form-control">
                 </div>
                 
                 <div class="form-group" style="grid-column: span 2; display: none;" id="group-branch">
@@ -263,33 +236,40 @@
                 </button>
             </div>
         </div>
-    </div> <div id="view-collections" class="tab-view">
+    </div> <!-- /view-dispatch -->
+
+    <!-- TAB 2: Collections & Live Tracking -->
+    <div id="view-collections" class="tab-view">
         <div style="max-width: 680px; margin: 0 auto;">
             
             <div class="collection-card">
-                <label class="collection-label">Track & Update via Order Number</label>
-                <div class="search-row border-style">
-                    <i class="fa-solid fa-box search-icon"></i>
-                    <input id="agent-order-num" class="search-input" placeholder="e.g. CG-1234" autocomplete="off">
-                    <button class="action-btn" onclick="searchByOrderNumber()">Track Order</button>
+                <label class="collection-label">Fetch Status via Order Number</label>
+                <div class="search-row">
+                    <i class="fa-solid fa-box" style="color: #a1a1aa; margin-right: 12px;"></i>
+                    <input id="agent-order-num" class="search-input" placeholder="e.g. CG-WALK-1234">
+                    <button class="action-btn" onclick="searchByOrderNumber()">Track Status</button>
                 </div>
             </div>
 
             <div class="divider-text"><span>OR</span></div>
 
             <div class="collection-card">
-                <label class="collection-label">Search by Client Details</label>
-                <div class="search-row border-style">
-                    <i class="fa-solid fa-user search-icon"></i>
-                    <input id="agent-global-search" class="search-input" placeholder="Email, Phone, or Full Name" autocomplete="off">
-                    <button class="action-btn" onclick="searchByClientDetails()">Search Client</button>
+                <label class="collection-label">Search Client History</label>
+                <div class="search-row">
+                    <i class="fa-solid fa-user" style="color: #a1a1aa; margin-right: 12px;"></i>
+                    <input id="agent-global-search" class="search-input" placeholder="Email, Phone, or Name">
+                    <button class="action-btn" onclick="searchByClientDetails()">Search</button>
                 </div>
             </div>
 
             <div id="collection-results" style="display: none; margin-top: 32px;"></div>
             
         </div>
-    </div> </div> <script type="module">
+    </div> <!-- /view-collections -->
+
+</div> <!-- /main-content -->
+
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
     import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -313,25 +293,25 @@
 
     let currentAgent = null;
 
-    // ============ UI Helpers ============
-    window.showLoading = (text = "Loading...", subtext = "") => {
+    // ============ UI Logic ============
+    window.showLoading = (text, sub) => {
         document.getElementById('loading-text').textContent = text;
-        document.getElementById('loading-subtext').textContent = subtext;
+        document.getElementById('loading-subtext').textContent = sub;
         document.getElementById('loading-overlay').classList.add('active');
     };
     window.hideLoading = () => { document.getElementById('loading-overlay').classList.remove('active'); };
 
-    window.showResultModal = (type, title, message) => {
+    window.showResultModal = (type, title, msg) => {
         const icon = document.getElementById('result-icon');
         const btn = document.getElementById('result-btn');
         icon.className = 'result-icon ' + type;
         icon.innerHTML = type === 'success' ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-exclamation"></i>';
         btn.className = 'result-btn ' + type;
         document.getElementById('result-title').textContent = title;
-        document.getElementById('result-message').textContent = message;
+        document.getElementById('result-message').textContent = msg;
         document.getElementById('result-modal-overlay').classList.add('active');
     };
-    window.closeResultModal = () => { document.getElementById('result-modal-overlay').classList.remove('active'); };
+    window.closeResultModal = () => document.getElementById('result-modal-overlay').classList.remove('active');
 
     window.switchTab = (tab) => {
         const isDispatch = tab === 'dispatch';
@@ -339,19 +319,28 @@
         document.getElementById('view-collections').classList.toggle('active', !isDispatch);
         document.getElementById('nav-dispatch').classList.toggle('active', isDispatch);
         document.getElementById('nav-collections').classList.toggle('active', !isDispatch);
-        document.getElementById('page-title').textContent = isDispatch ? 'New Dispatch Order' : 'Branch Collections';
+        document.getElementById('page-title').textContent = isDispatch ? 'New Dispatch Order' : 'Order Tracking & Collection';
     };
 
     window.toggleRouteType = () => {
-        const type = document.getElementById('route-type').value;
-        document.getElementById('group-address').style.display = type === 'door' ? 'flex' : 'none';
-        document.getElementById('group-branch').style.display = type === 'door' ? 'none' : 'flex';
+        const isDoor = document.getElementById('route-type').value === 'door';
+        document.getElementById('group-address').style.display = isDoor ? 'flex' : 'none';
+        document.getElementById('group-branch').style.display = isDoor ? 'none' : 'flex';
     };
 
-    function escapeHtml(str) {
-        return (str || '').toString()
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+    function escapeHtml(str) { return (str||'').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    // Map Shipday standard statuses to UI Badges
+    function mapShipdayStatus(state) {
+        const map = {
+            'ACCEPTED': { text: 'Pending Dispatch', class: 'placed' },
+            'ASSIGNED': { text: 'Driver Assigned', class: 'ready_for_collection' },
+            'STARTED': { text: 'Driver En Route', class: 'out_for_delivery' },
+            'PICKED_UP': { text: 'In Transit', class: 'out_for_delivery' },
+            'ALREADY_DELIVERED': { text: 'Delivered', class: 'delivered' },
+            'FAILED_DELIVERY': { text: 'Delivery Failed', class: 'cancelled' }
+        };
+        return map[state] || { text: state, class: 'placed' };
     }
 
     // ============ Auth Logic ============
@@ -360,7 +349,7 @@
         if (user) {
             currentAgent = user;
             document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('agent-info').innerHTML = `<i class="fa-solid fa-user-circle" style="margin-right: 6px;"></i> ${user.displayName}`;
+            document.getElementById('agent-info').innerHTML = `<i class="fa-solid fa-user-circle"></i> ${user.displayName}`;
         } else {
             currentAgent = null;
             document.getElementById('auth-overlay').style.display = 'flex';
@@ -372,65 +361,42 @@
         try { await signInWithPopup(auth, provider); } 
         catch (error) { hideLoading(); showResultModal('error', 'Sign-In Failed', error.message); }
     };
-
     window.signOutAgent = async () => { showLoading("Signing out..."); await signOut(auth); hideLoading(); };
 
-    // ============ Walk-in Dispatch Logic ============
+    // ============ Dispatch Logic ============
     window.processWalkInOrder = async () => {
         const btn = document.getElementById('dispatch-btn');
-        
         const routeType = document.getElementById('route-type').value;
-        const originBranch = document.getElementById('origin-branch').value;
         const senderName = document.getElementById('sender-name').value;
-        const senderPhone = document.getElementById('sender-phone').value;
-        const senderEmail = document.getElementById('sender-email').value;
-        
         const receiverName = document.getElementById('receiver-name').value;
-        const receiverPhone = document.getElementById('receiver-phone').value;
+        const finalDest = routeType === 'door' ? document.getElementById('delivery-address').value : document.getElementById('destination-branch').value;
         
-        const finalDestination = routeType === 'door' 
-            ? document.getElementById('delivery-address').value 
-            : document.getElementById('destination-branch').value;
-            
-        const paymentMethod = document.getElementById('payment-method').value;
-        
-        const packageSelect = document.getElementById('package-size').value.split('|');
-        const packageName = packageSelect[0];
-        const packagePrice = parseInt(packageSelect[1]);
-
-        if(!senderName || !receiverName || !finalDestination) {
-            showResultModal('error', 'Missing Information', 'Please fill in all required fields to dispatch this order.');
-            return;
-        }
+        if(!senderName || !receiverName || !finalDest) return showResultModal('error', 'Missing Data', 'Please complete all fields.');
 
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing Dispatch...';
-        showLoading("Saving order...", "Writing record to Firebase");
-
+        showLoading("Dispatching...", "Syncing with Shipday Network");
         const orderId = "CG-WALK-" + Math.floor(1000 + Math.random() * 9000);
+        const pSize = document.getElementById('package-size').value.split('|');
 
         const payload = {
             orderNumber: orderId,
-            userId: currentAgent.uid, 
-            customerName: receiverName, 
-            customerPhoneNumber: receiverPhone,
-            customerAddress: finalDestination, 
-            customerEmail: senderEmail || null,
-            restaurantName: `Sender: ${senderName}`, 
-            restaurantPhoneNumber: senderPhone,
-            restaurantAddress: originBranch, 
-            orderItem: [{ name: packageName, unitPrice: packagePrice, quantity: 1 }],
-            totalOrderCost: packagePrice, 
-            paymentMethod: paymentMethod,
+            customerName: receiverName,
+            customerPhoneNumber: document.getElementById('receiver-phone').value,
+            customerAddress: finalDest,
+            restaurantName: `Sender: ${senderName}`,
+            restaurantPhoneNumber: document.getElementById('sender-phone').value,
+            restaurantAddress: document.getElementById('origin-branch').value,
+            orderItem: [{ name: pSize[0], unitPrice: parseInt(pSize[1]), quantity: 1 }],
+            totalOrderCost: parseInt(pSize[1]),
             status: 'placed',
             source: 'agent_dashboard',
             timestamp: Date.now()
         };
 
         try {
-            await set(push(ref(database, 'orders')), payload);
+            await set(push(ref(database, 'orders')), payload); // Save to Firebase
 
-            showLoading("Dispatching to driver network...", "Sending order to Shipday");
+            // Dispatch to Shipday
             const sdRes = await fetch("https://api.shipday.com/orders", {
                 method: "POST",
                 headers: { "Authorization": `Basic ${SHIPDAY_KEY}`, "Content-Type": "application/json" },
@@ -440,31 +406,39 @@
             if (!sdRes.ok) throw new Error("Shipday Dispatch Failed: " + sdRes.status);
 
             hideLoading();
-            showResultModal('success', 'Order Dispatched', `Order ${orderId} has been securely dispatched and is now visible to drivers.`);
-            document.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"]').forEach(i => i.value = '');
+            showResultModal('success', 'Dispatched', `Order ${orderId} successfully dispatched to the driver network.`);
+            document.querySelectorAll('input').forEach(i => i.value = '');
         } catch (error) {
-            console.error(error);
             hideLoading();
-            showResultModal('error', 'Dispatch Failed', error.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Dispatch Order to Shipday';
-        }
+            showResultModal('error', 'Failed', error.message);
+        } finally { btn.disabled = false; }
     };
 
-    // ============ Collections Tab Logic ============
-    
-    // 1. Render Results HTML
-    window.renderCollectionResults = (ordersObj) => {
+    // ============ Tracking & Collections Logic ============
+
+    // Render logic capable of merging Firebase data with Shipday Live Tracking
+    window.renderCollectionResults = (firebaseOrders, activeShipdayOrders = []) => {
         const resultsContainer = document.getElementById('collection-results');
         resultsContainer.style.display = 'block';
-        resultsContainer.innerHTML = '';
-
+        
         let html = '';
-        Object.entries(ordersObj).forEach(([orderId, order]) => {
-            const isCompleted = order.status === 'collected' || order.status === 'delivered';
-            const displayStatus = (order.status || 'placed').replace(/_/g, ' ').toUpperCase();
+        Object.entries(firebaseOrders).forEach(([orderId, order]) => {
             
+            // Try to find matching live data from Shipday API
+            const shipdayMatch = activeShipdayOrders.find(sd => sd.orderNumber === order.orderNumber);
+            
+            let displayStatus = (order.status || 'placed').replace(/_/g, ' ').toUpperCase();
+            let badgeClass = order.status || 'placed';
+            
+            // If Shipday has live data, OVERRIDE the firebase status
+            if (shipdayMatch && shipdayMatch.orderStatus?.orderState) {
+                const mapped = mapShipdayStatus(shipdayMatch.orderStatus.orderState);
+                displayStatus = mapped.text;
+                badgeClass = mapped.class;
+            }
+
+            const isCompleted = badgeClass === 'delivered' || badgeClass === 'collected';
+
             html += `
                 <div class="order-result-card" id="agent-card-${orderId}">
                     <div class="order-result-header">
@@ -472,19 +446,30 @@
                             <div class="order-result-id">${escapeHtml(order.orderNumber)}</div>
                             <div class="order-result-sub">${new Date(order.timestamp || Date.now()).toLocaleString()}</div>
                         </div>
-                        <span class="status-badge ${order.status || 'placed'}">${escapeHtml(displayStatus)}</span>
+                        <span class="status-badge ${badgeClass}">${escapeHtml(displayStatus)}</span>
                     </div>
+
+                    ${shipdayMatch ? `
+                        <!-- LIVE SHIPDAY DATA OVERLAY -->
+                        <div class="shipday-live-box">
+                            <div class="shipday-live-header"><i class="fa-solid fa-satellite-dish"></i> Live Shipday Tracking</div>
+                            <div class="shipday-live-grid">
+                                <div><span class="shipday-label">Assigned Carrier</span><span class="shipday-value">${escapeHtml(shipdayMatch.assignedCarrier?.name || 'Searching for driver...')}</span></div>
+                                <div><span class="shipday-label">Estimated Arrival</span><span class="shipday-value">${escapeHtml(shipdayMatch.etaTime || 'Calculating...')}</span></div>
+                            </div>
+                        </div>
+                    ` : ''}
                     
                     <div class="order-detail-grid">
                         <div class="order-detail-item"><label>Client</label><div>${escapeHtml(order.customerName || 'N/A')}</div></div>
                         <div class="order-detail-item"><label>Contact</label><div>${escapeHtml(order.customerPhoneNumber || 'N/A')}</div></div>
-                        <div class="order-detail-item"><label>Package</label><div>${escapeHtml((order.orderItem && order.orderItem[0].name) || 'Package')}</div></div>
                         <div class="order-detail-item"><label>Destination</label><div>${escapeHtml(order.customerAddress || 'N/A')}</div></div>
+                        <div class="order-detail-item"><label>Package</label><div>${escapeHtml((order.orderItem && order.orderItem[0].name) || 'Package')}</div></div>
                     </div>
 
                     ${!isCompleted ? `
                         <button class="btn-submit" style="margin-top: 10px; padding: 14px; background: #16a34a; box-shadow: none;" onclick="markAsCollected('${orderId}')">
-                            <i class="fa-solid fa-check-double"></i> Mark Package as Collected
+                            <i class="fa-solid fa-check-double"></i> Mark Handed to Client
                         </button>
                     ` : `
                         <div style="margin-top: 10px; padding: 14px; background: #dcfce7; color: #16a34a; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px;">
@@ -498,131 +483,110 @@
         resultsContainer.innerHTML = html || `<div class="empty-state"><i class="fa-solid fa-box-open"></i>No active orders found.</div>`;
     };
 
-    // 2. Track via Order Number
+    // Global fetch for active Shipday orders to cross-reference
+    async function fetchActiveShipdayOrders() {
+        try {
+            const res = await fetch('https://api.shipday.com/orders', {
+                headers: { 'Authorization': `Basic ${SHIPDAY_KEY}`, 'Accept': 'application/json' }
+            });
+            if (res.ok) return await res.json();
+        } catch(e) { console.warn("Failed syncing with Shipday API", e); }
+        return [];
+    }
+
+    // Direct Search by Order Number (Dual Fetch)
     window.searchByOrderNumber = async () => {
         const orderNum = document.getElementById('agent-order-num').value.trim();
-        if (!orderNum) return showResultModal('error', 'Missing Input', 'Please enter an order number.');
+        if (!orderNum) return showResultModal('error', 'Input Required', 'Please enter an order number.');
 
-        showLoading("Searching...", "Querying database for exact match");
+        showLoading("Locating Package...", "Querying internal DB and Shipday Network");
         try {
+            // 1. Fetch Firebase details
             const q = query(ref(database, 'orders'), orderByChild('orderNumber'), equalTo(orderNum));
             const snap = await get(q);
+            
+            // 2. Fetch Live Shipday details concurrently
+            const shipdayData = await fetchActiveShipdayOrders();
+            
             hideLoading();
             
             if (snap.exists()) {
-                renderCollectionResults(snap.val());
+                renderCollectionResults(snap.val(), shipdayData);
             } else {
-                const resultsContainer = document.getElementById('collection-results');
-                resultsContainer.style.display = 'block';
-                resultsContainer.innerHTML = `<div class="empty-state"><i class="fa-solid fa-box-open"></i>No order found with number: ${escapeHtml(orderNum)}</div>`;
+                document.getElementById('collection-results').style.display = 'block';
+                document.getElementById('collection-results').innerHTML = `<div class="empty-state"><i class="fa-solid fa-search"></i>No matching order found in the system.</div>`;
             }
         } catch (e) {
             hideLoading();
-            showResultModal('error', 'Lookup Failed', e.message);
+            showResultModal('error', 'Lookup Error', e.message);
         }
     };
 
-    // 3. Search via Client Details (Cross-checking users & orders)
+    // Client History Search (Dual Fetch)
     window.searchByClientDetails = async () => {
-        const searchTerm = document.getElementById('agent-global-search').value.trim().toLowerCase();
-        if (!searchTerm) return showResultModal('error', 'Missing Input', 'Please enter a name, email, or phone number.');
+        const term = document.getElementById('agent-global-search').value.trim().toLowerCase();
+        if (!term) return showResultModal('error', 'Input Required', 'Enter details to search.');
 
-        showLoading("Scanning records...", "Looking up client information");
+        showLoading("Scanning Records...", "Finding client profile and live tracking data");
         try {
-            // First pass: Find matching UID from 'users' node
-            const usersSnap = await get(ref(database, 'users'));
-            let targetUid = null;
+            // 1. Get Live Shipday Data for cross-referencing later
+            const shipdayDataPromise = fetchActiveShipdayOrders();
 
-            if (usersSnap.exists()) {
-                usersSnap.forEach(child => {
-                    const user = child.val();
-                    const email = (user.email || '').toLowerCase();
-                    const phone = (user.phone || '').toLowerCase();
-                    const name  = (user.name || '').toLowerCase();
-
-                    if (email === searchTerm || phone === searchTerm || name.includes(searchTerm)) {
-                        targetUid = child.key;
-                    }
-                });
-            }
-
-            // Second pass: If a UID was found, query their specific orders
-            if (targetUid) {
-                const q = query(ref(database, 'orders'), orderByChild('userId'), equalTo(targetUid));
-                const ordersSnap = await get(q);
-                hideLoading();
-
-                if (ordersSnap.exists()) {
-                    renderCollectionResults(ordersSnap.val());
-                } else {
-                    document.getElementById('collection-results').innerHTML = `<div class="empty-state"><i class="fa-solid fa-box-open"></i>Client profile found, but no active orders associated.</div>`;
-                    document.getElementById('collection-results').style.display = 'block';
-                }
-                return;
-            }
-
-            // Third pass (Fallback): If no user account exists (e.g. Walk-in client), search 'orders' node directly
+            // 2. Fallback direct match search in Firebase 'orders' node
             const allOrdersSnap = await get(ref(database, 'orders'));
             let directMatches = {};
             
             if (allOrdersSnap.exists()) {
                 allOrdersSnap.forEach(child => {
                     const o = child.val();
-                    if ((o.customerName || '').toLowerCase().includes(searchTerm) || 
-                        (o.customerPhoneNumber || '').toLowerCase().includes(searchTerm) || 
-                        (o.customerEmail || '').toLowerCase().includes(searchTerm) ||
-                        (o.restaurantName || '').toLowerCase().includes(searchTerm) || 
-                        (o.restaurantPhoneNumber || '').toLowerCase().includes(searchTerm)) {
+                    if ((o.customerName||'').toLowerCase().includes(term) || 
+                        (o.customerPhoneNumber||'').toLowerCase().includes(term) || 
+                        (o.customerEmail||'').toLowerCase().includes(term)) {
                         directMatches[child.key] = o;
                     }
                 });
             }
             
+            const shipdayData = await shipdayDataPromise;
             hideLoading();
-            const resultsContainer = document.getElementById('collection-results');
-            resultsContainer.style.display = 'block';
             
             if (Object.keys(directMatches).length > 0) {
-                renderCollectionResults(directMatches);
+                renderCollectionResults(directMatches, shipdayData);
             } else {
-                resultsContainer.innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-xmark"></i>No client or order matches found for: "${escapeHtml(searchTerm)}"</div>`;
+                document.getElementById('collection-results').style.display = 'block';
+                document.getElementById('collection-results').innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-xmark"></i>No matches found for: "${escapeHtml(term)}"</div>`;
             }
-
         } catch (e) {
             hideLoading();
-            showResultModal('error', 'Search Failed', e.message);
+            showResultModal('error', 'Search Error', e.message);
         }
     };
 
-    // 4. Mark Package as Collected
+    // Manual status override for collection
     window.markAsCollected = async (orderId) => {
-        showLoading("Updating Status...", "Securing update in Firebase");
+        showLoading("Updating...", "Securing in Firebase");
         try {
             await update(ref(database, `orders/${orderId}`), { 
                 status: 'collected', 
                 collectedAtBranch: true,
-                statusUpdatedAt: Date.now(),
-                statusUpdatedBy: currentAgent ? currentAgent.uid : 'Unknown Agent'
+                statusUpdatedAt: Date.now()
             });
             hideLoading();
-            showResultModal('success', 'Order Updated', 'The package has been successfully marked as collected by the client.');
             
             // Instantly update UI without making another database read
-            const btn = document.querySelector(`#agent-card-${orderId} .btn-submit`);
-            if (btn) {
-                btn.outerHTML = `<div style="margin-top: 10px; padding: 14px; background: #dcfce7; color: #16a34a; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-circle-check"></i> Package Successfully Collected</div>`;
-            }
-            const badge = document.querySelector(`#agent-card-${orderId} .status-badge`);
-            if(badge) {
-                badge.className = 'status-badge collected';
-                badge.textContent = 'COLLECTED';
+            const card = document.getElementById(`agent-card-${orderId}`);
+            if (card) {
+                const btn = card.querySelector('.btn-submit');
+                if (btn) btn.outerHTML = `<div style="margin-top: 10px; padding: 14px; background: #dcfce7; color: #16a34a; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px;"><i class="fa-solid fa-circle-check"></i> Package Successfully Collected</div>`;
+                
+                const badge = card.querySelector('.status-badge');
+                if (badge) { badge.className = 'status-badge delivered'; badge.textContent = 'COLLECTED'; }
             }
         } catch (e) {
             hideLoading();
             showResultModal('error', 'Update Failed', e.message);
         }
     };
-
 </script>
 </body>
 </html>
