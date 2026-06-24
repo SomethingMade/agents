@@ -106,6 +106,48 @@
         .result-btn.success:hover { background: #15803d; }
         .result-btn.error { background: #18181b; }
         .result-btn.error:hover { background: #27272a; }
+
+        /* ============ Tab Views ============ */
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+
+        /* ============ Search / Track Bar ============ */
+        .search-bar { display: flex; gap: 12px; }
+        .search-bar .form-control { flex: 1; }
+        .btn-action {
+            padding: 0 24px; background: #18181b; color: #fff; border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center;
+            gap: 8px; transition: all 0.2s ease; white-space: nowrap;
+        }
+        .btn-action:hover { background: #27272a; }
+        .btn-action:disabled { background: #a1a1aa; cursor: not-allowed; }
+
+        /* ============ Order Result Card ============ */
+        .order-result-card {
+            border: 1.5px solid #e4e4e7; border-radius: 16px; padding: 24px; margin-top: 16px;
+            background: #fafafa;
+        }
+        .order-result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+        .order-result-id { font-size: 16px; font-weight: 800; color: #09090b; letter-spacing: -0.3px; }
+        .order-result-sub { font-size: 12px; color: #a1a1aa; font-weight: 600; margin-top: 2px; }
+        .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+        .order-detail-item label { display: block; font-size: 11px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+        .order-detail-item div { font-size: 14px; font-weight: 600; color: #18181b; }
+        .order-status-row { display: flex; gap: 12px; align-items: center; }
+        .order-status-row select { flex: 1; }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .status-badge.placed { background: #dbeafe; color: #1d4ed8; }
+        .status-badge.ready_for_collection { background: #fef9c3; color: #a16207; }
+        .status-badge.out_for_delivery { background: #e0e7ff; color: #4338ca; }
+        .status-badge.collected, .status-badge.delivered { background: #dcfce7; color: #16a34a; }
+        .status-badge.cancelled { background: #fee2e2; color: #dc2626; }
+
+        .empty-state { text-align: center; padding: 32px 0; color: #a1a1aa; font-size: 14px; font-weight: 600; }
+        .empty-state i { font-size: 28px; display: block; margin-bottom: 12px; color: #d4d4d8; }
     </style>
 </head>
 <body>
@@ -142,18 +184,21 @@
 
 <div class="sidebar">
     <div class="brand"><i class="fa-solid fa-truck-fast"></i> CourierGo</div>
-    <div class="nav-item active"><i class="fa-solid fa-layer-group"></i> Walk-in Dispatch</div>
+    <div class="nav-item active" id="nav-dispatch" onclick="switchTab('dispatch')"><i class="fa-solid fa-layer-group"></i> Walk-in Dispatch</div>
+    <div class="nav-item" id="nav-collections" onclick="switchTab('collections')"><i class="fa-solid fa-box-open"></i> Collections</div>
     <div class="nav-item"><i class="fa-solid fa-clipboard-list"></i> Daily Log</div>
     <div style="margin-top: auto;" class="nav-item" onclick="signOutAgent()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</div>
 </div>
 
 <div class="main-content">
     <div class="header">
-        <h1>New Dispatch Order</h1>
+        <h1 id="page-title">New Dispatch Order</h1>
         <div id="agent-info" style="font-size: 14px; font-weight: 600; color: #71717a; background: #e4e4e7; padding: 8px 16px; border-radius: 20px;">
             <i class="fa-solid fa-user-circle" style="margin-right: 6px;"></i> Loading...
         </div>
     </div>
+
+    <div id="view-dispatch" class="tab-view active">
 
     <!-- Dispatch Route Configuration -->
     <div class="card">
@@ -187,6 +232,10 @@
             <div class="form-group">
                 <label>Mobile Number</label>
                 <input type="tel" id="sender-phone" class="form-control" placeholder="060 123 4567">
+            </div>
+            <div class="form-group">
+                <label>Email (Optional)</label>
+                <input type="email" id="sender-email" class="form-control" placeholder="client@example.com">
             </div>
         </div>
     </div>
@@ -248,12 +297,38 @@
             </button>
         </div>
     </div>
+
+    </div> <!-- /view-dispatch -->
+
+    <div id="view-collections" class="tab-view">
+
+        <!-- Track by Order Number -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-magnifying-glass-location"></i> Track Order to Update Status</div>
+            <div class="search-bar">
+                <input type="text" id="track-order-number" class="form-control" placeholder="Enter order number e.g. CG-WALK-1234">
+                <button class="btn-action" id="track-btn" onclick="trackOrder()"><i class="fa-solid fa-search"></i> Track Order</button>
+            </div>
+            <div id="track-result"></div>
+        </div>
+
+        <!-- Search Orders -->
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-list-check"></i> Search Orders</div>
+            <div class="search-bar">
+                <input type="text" id="search-query" class="form-control" placeholder="Search by client name, email or contact number">
+                <button class="btn-action" id="search-btn" onclick="searchOrders()"><i class="fa-solid fa-search"></i> Search</button>
+            </div>
+            <div id="search-results"></div>
+        </div>
+
+    </div> <!-- /view-collections -->
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBQSPwpVbGrdCuOoyitAeWQHIeipj2MgIY",
@@ -297,6 +372,16 @@
     };
     window.closeResultModal = () => {
         document.getElementById('result-modal-overlay').classList.remove('active');
+    };
+
+    // ============ Tab Switching ============
+    window.switchTab = (tab) => {
+        const isDispatch = tab === 'dispatch';
+        document.getElementById('view-dispatch').classList.toggle('active', isDispatch);
+        document.getElementById('view-collections').classList.toggle('active', !isDispatch);
+        document.getElementById('nav-dispatch').classList.toggle('active', isDispatch);
+        document.getElementById('nav-collections').classList.toggle('active', !isDispatch);
+        document.getElementById('page-title').textContent = isDispatch ? 'New Dispatch Order' : 'Collections';
     };
 
     // UI Toggle Logic
@@ -352,6 +437,7 @@
         const originBranch = document.getElementById('origin-branch').value;
         const senderName = document.getElementById('sender-name').value;
         const senderPhone = document.getElementById('sender-phone').value;
+        const senderEmail = document.getElementById('sender-email').value;
         
         const receiverName = document.getElementById('receiver-name').value;
         const receiverPhone = document.getElementById('receiver-phone').value;
@@ -384,6 +470,7 @@
             customerName: receiverName, 
             customerPhoneNumber: receiverPhone,
             customerAddress: finalDestination, 
+            customerEmail: senderEmail || null,
             restaurantName: `Sender: ${senderName}`, 
             restaurantPhoneNumber: senderPhone,
             restaurantAddress: originBranch, // Pick-up location maps to the origin branch
@@ -416,7 +503,7 @@
             showResultModal('success', 'Order Dispatched', `Order ${orderId} has been securely dispatched and is now visible to drivers.`);
             
             // Clear text/tel fields
-            document.querySelectorAll('input[type="text"], input[type="tel"]').forEach(i => i.value = '');
+            document.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"]').forEach(i => i.value = '');
 
         } catch (error) {
             console.error(error);
@@ -425,6 +512,169 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Dispatch Order to Shipday';
+        }
+    // ============ Collections: Helpers ============
+
+    const STATUS_OPTIONS = [
+        { value: 'placed', label: 'Placed' },
+        { value: 'ready_for_collection', label: 'Ready for Collection' },
+        { value: 'out_for_delivery', label: 'Out for Delivery' },
+        { value: 'collected', label: 'Collected by Client' },
+        { value: 'delivered', label: 'Delivered' },
+        { value: 'cancelled', label: 'Cancelled' }
+    ];
+
+    function statusLabel(value) {
+        const match = STATUS_OPTIONS.find(s => s.value === value);
+        return match ? match.label : (value || 'Unknown');
+    }
+
+    function statusOptionsHtml(current) {
+        return STATUS_OPTIONS.map(s =>
+            `<option value="${s.value}" ${s.value === current ? 'selected' : ''}>${s.label}</option>`
+        ).join('');
+    }
+
+    function escapeHtml(str) {
+        return (str || '').toString()
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function renderOrderCard(key, order) {
+        const status = order.status || 'placed';
+        const senderName = (order.restaurantName || '').replace(/^Sender:\s*/i, '');
+        return `
+            <div class="order-result-card" id="order-card-${key}">
+                <div class="order-result-header">
+                    <div>
+                        <div class="order-result-id">${escapeHtml(order.orderNumber)}</div>
+                        <div class="order-result-sub">${new Date(order.timestamp || Date.now()).toLocaleString()}</div>
+                    </div>
+                    <span class="status-badge ${status}" id="badge-${key}">${escapeHtml(statusLabel(status))}</span>
+                </div>
+                <div class="order-detail-grid">
+                    <div class="order-detail-item"><label>Sender</label><div>${escapeHtml(senderName)}</div></div>
+                    <div class="order-detail-item"><label>Sender Phone</label><div>${escapeHtml(order.restaurantPhoneNumber)}</div></div>
+                    <div class="order-detail-item"><label>Recipient</label><div>${escapeHtml(order.customerName)}</div></div>
+                    <div class="order-detail-item"><label>Recipient Phone</label><div>${escapeHtml(order.customerPhoneNumber)}</div></div>
+                    <div class="order-detail-item"><label>Email</label><div>${escapeHtml(order.customerEmail) || '&mdash;'}</div></div>
+                    <div class="order-detail-item"><label>Destination</label><div>${escapeHtml(order.customerAddress)}</div></div>
+                </div>
+                <div class="order-status-row">
+                    <select class="form-control" id="status-select-${key}">
+                        ${statusOptionsHtml(status)}
+                    </select>
+                    <button class="btn-action" onclick="updateOrderStatus('${key}')"><i class="fa-solid fa-rotate"></i> Update</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============ Track Order by Number ============
+    window.trackOrder = async () => {
+        const orderNumber = document.getElementById('track-order-number').value.trim();
+        const resultBox = document.getElementById('track-result');
+
+        if (!orderNumber) {
+            showResultModal('error', 'Order Number Required', 'Please enter an order number to track.');
+            return;
+        }
+
+        showLoading("Looking up order...", "Querying Firebase records");
+        try {
+            const q = query(ref(database, 'orders'), orderByChild('orderNumber'), equalTo(orderNumber));
+            const snap = await get(q);
+
+            hideLoading();
+
+            if (!snap.exists()) {
+                resultBox.innerHTML = `<div class="empty-state"><i class="fa-solid fa-box-open"></i>No order found matching "${escapeHtml(orderNumber)}"</div>`;
+                return;
+            }
+
+            let html = '';
+            snap.forEach(child => { html += renderOrderCard(child.key, child.val()); });
+            resultBox.innerHTML = html;
+
+        } catch (error) {
+            hideLoading();
+            showResultModal('error', 'Lookup Failed', error.message);
+        }
+    };
+
+    // ============ Search Orders ============
+    window.searchOrders = async () => {
+        const rawQuery = document.getElementById('search-query').value.trim();
+        const resultsBox = document.getElementById('search-results');
+
+        if (!rawQuery) {
+            showResultModal('error', 'Search Term Required', 'Please enter a name, email or contact number to search.');
+            return;
+        }
+
+        const term = rawQuery.toLowerCase();
+        showLoading("Searching orders...", "Scanning Firebase records");
+
+        try {
+            const snap = await get(ref(database, 'orders'));
+            hideLoading();
+
+            if (!snap.exists()) {
+                resultsBox.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i>No orders found in the system yet.</div>`;
+                return;
+            }
+
+            const matches = [];
+            snap.forEach(child => {
+                const o = child.val();
+                const haystack = [
+                    o.customerName, o.customerPhoneNumber, o.customerEmail,
+                    o.restaurantName, o.restaurantPhoneNumber, o.orderNumber
+                ].filter(Boolean).join(' ').toLowerCase();
+
+                if (haystack.includes(term)) matches.push({ key: child.key, order: o });
+            });
+
+            if (matches.length === 0) {
+                resultsBox.innerHTML = `<div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i>No orders matched "${escapeHtml(rawQuery)}"</div>`;
+                return;
+            }
+
+            matches.sort((a, b) => (b.order.timestamp || 0) - (a.order.timestamp || 0));
+            resultsBox.innerHTML = matches.map(m => renderOrderCard(m.key, m.order)).join('');
+
+        } catch (error) {
+            hideLoading();
+            showResultModal('error', 'Search Failed', error.message);
+        }
+    };
+
+    // ============ Update Order Status ============
+    window.updateOrderStatus = async (key) => {
+        const select = document.getElementById(`status-select-${key}`);
+        const newStatus = select.value;
+
+        showLoading("Updating status...", "Writing change to Firebase");
+        try {
+            await update(ref(database, `orders/${key}`), {
+                status: newStatus,
+                statusUpdatedAt: Date.now(),
+                statusUpdatedBy: currentAgent ? currentAgent.uid : null
+            });
+
+            hideLoading();
+
+            const badge = document.getElementById(`badge-${key}`);
+            if (badge) {
+                badge.className = `status-badge ${newStatus}`;
+                badge.textContent = statusLabel(newStatus);
+            }
+
+            showResultModal('success', 'Status Updated', `Order status has been changed to "${statusLabel(newStatus)}".`);
+        } catch (error) {
+            hideLoading();
+            showResultModal('error', 'Update Failed', error.message);
         }
     };
 </script>
