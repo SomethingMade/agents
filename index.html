@@ -322,7 +322,6 @@
     </div> 
 </div> 
 
-<!-- Floating Support Chat Container Additions -->
 <div class="chat-btn" id="chat-floating-btn" onclick="toggleChatPanel()">
     <i class="fa-solid fa-comments"></i>
     <div class="chat-badge" id="chat-total-badge">0</div>
@@ -341,12 +340,10 @@
         </button>
     </div>
     <div class="chat-body">
-        <!-- Conversation Inbox Pane -->
         <div class="chat-pane" id="chat-list-pane">
             <div class="empty-state" style="margin: 24px; border: none;"><i class="fa-solid fa-message"></i>No support chats available.</div>
         </div>
         
-        <!-- Active Chat Feed Pane -->
         <div class="chat-pane" id="chat-window-pane" style="display: none;">
             <div class="chat-messages-area" id="chat-messages-display"></div>
             <div class="chat-input-container">
@@ -376,8 +373,8 @@
     const SHIPDAY_KEY = "K5a8wQJF3f.az2zfrhgzwxK9JONI2y8";
     
     // Add your Meta WhatsApp API credentials here
-    const WA_PHONE_NUMBER_ID = "457757337421389"; // e.g. "1234567890"
-    const WA_ACCESS_TOKEN = "EAATSJaxKWHwBRwVTZB4CSe4gNca2Od58sFZCZBTDZAWjmEP0ZCufmvt0IChe4cwstjDBnQf06Wq9a9XPSBFrWHevzhm4WcwuoxUmKNXVvGF4y9awSwnlTCJjYz7hqM2gRc1ZCgpGGh0UXWsApjBDI962AOmP05guSQKIRL6yu3WZCHNHWZBkIvAXQJDxwGcliTxG4QZDZD";  // e.g. "EAAO...xyz"
+    const WA_PHONE_NUMBER_ID = "457757337421389"; 
+    const WA_ACCESS_TOKEN = "EAATSJaxKWHwBRwVTZB4CSe4gNca2Od58sFZCZBTDZAWjmEP0ZCufmvt0IChe4cwstjDBnQf06Wq9a9XPSBFrWHevzhm4WcwuoxUmKNXVvGF4y9awSwnlTCJjYz7hqM2gRc1ZCgpGGh0UXWsApjBDI962AOmP05guSQKIRL6yu3WZCHNHWZBkIvAXQJDxwGcliTxG4QZDZD";  
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -387,91 +384,107 @@
     let currentAgent = null;
 
     // --- Floating Support Chat States & Logic ---
-    const alertAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-84.wav');
-    let activeChatId = null;
-    let registeredChats = {};
+    let usersCache = {};
+    let chatsData = {};
+    let agentReadState = JSON.parse(localStorage.getItem('agentReadState') || '{}');
     let initialLoadComplete = false;
+    let lastKnownUnreadCount = 0;
+    let activeChatId = null;
+    const alertAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-84.wav');
 
-    // Listen to real-time incoming operations inside 'support_chats'
-    onValue(ref(database, 'support_chats'), (snapshot) => {
-        const chats = snapshot.val() || {};
-        let aggregateUnread = 0;
-        let triggerAlert = false;
+    // 1. Fetch user profiles to display correct names in the inbox
+    onValue(ref(database, 'users'), (snap) => {
+        usersCache = snap.val() || {};
+        renderChatInbox();
+    });
 
-        const listContainer = document.getElementById('chat-list-pane');
+    // 2. Fetch the correct 'chats/' node used by the client UI
+    onValue(ref(database, 'chats'), (snap) => {
+        chatsData = snap.val() || {};
+        renderChatInbox();
+        
+        if (activeChatId && chatsData[activeChatId]) {
+            renderChatHistory(chatsData[activeChatId]);
+        }
+        initialLoadComplete = true;
+    });
+
+    // Helper: Determine if a specific user feed has unread messages
+    function feedUnread(feed) {
+        const lastRead = agentReadState[feed.uid] || 0;
+        return feed.lastMsg?.sender === 'user' && feed.lastMsg?.timestamp > lastRead;
+    }
+
+    function renderChatInbox() {
         let inboxHtml = '';
 
-        // Order the channel feeds by descending order of their active timestamps
-        const dynamicFeeds = Object.entries(chats).sort((x, y) => (y[1].timestamp || 0) - (x[1].timestamp || 0));
+        // Extract and map all chats from the root 'chats' node
+        const dynamicFeeds = Object.entries(chatsData).map(([uid, messagesObj]) => {
+            const messages = Object.values(messagesObj || {}).sort((a,b) => a.timestamp - b.timestamp);
+            const lastMsg = messages[messages.length - 1];
+            // Match the UID to the users collection, fallback to a slice of their UID
+            const userName = usersCache[uid]?.name || usersCache[uid]?.email || `Client (${uid.substring(0,4)})`;
+            return { uid, messagesObj, lastMsg, userName, timestamp: lastMsg?.timestamp || 0 };
+        }).sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
 
-        dynamicFeeds.forEach(([id, payload]) => {
-            const missingCount = payload.unreadCountAgent || 0;
-            aggregateUnread += missingCount;
-
-            // Trigger notification rules for incoming requests
-            if (initialLoadComplete && payload.lastSender === 'customer') {
-                if (!registeredChats[id] || registeredChats[id].timestamp < payload.timestamp) {
-                    if (activeChatId !== id || !document.getElementById('chat-panel-container').classList.contains('active')) {
-                        triggerAlert = true;
-                    }
-                }
-            }
-
-            // Sync structural local logs
-            registeredChats[id] = { timestamp: payload.timestamp, unreadCountAgent: missingCount };
-
-            const displayInitials = (payload.customerName || 'C').substring(0, 2);
-            const formattedTime = payload.timestamp ? new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            const internalBadge = missingCount > 0 ? `<div class="chat-user-badge">${missingCount}</div>` : '';
+        dynamicFeeds.forEach(feed => {
+            const actualUnread = feedUnread(feed);
+            const internalBadge = actualUnread ? `<div class="chat-user-badge">!</div>` : '';
+            const displayInitials = feed.userName.substring(0, 2).toUpperCase();
+            const formattedTime = feed.timestamp ? new Date(feed.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            const previewText = feed.lastMsg?.text || 'No message';
 
             inboxHtml += `
-                <div class="chat-user-item" onclick="openActiveChat('${id}', '${escapeHtml(payload.customerName || 'Customer')}')">
+                <div class="chat-user-item" onclick="openActiveChat('${feed.uid}', '${escapeHtml(feed.userName)}')">
                     <div class="chat-user-avatar">${escapeHtml(displayInitials)}</div>
                     <div class="chat-user-info">
                         <div class="chat-user-row">
-                            <span class="chat-user-name">${escapeHtml(payload.customerName || 'Customer')}</span>
+                            <span class="chat-user-name">${escapeHtml(feed.userName)}</span>
                             <span class="chat-user-time">${formattedTime}</span>
                         </div>
                         <div class="chat-user-row">
-                            <span class="chat-user-preview">${escapeHtml(payload.lastMessage || '')}</span>
+                            <span class="chat-user-preview">${escapeHtml(previewText)}</span>
                             ${internalBadge}
                         </div>
                     </div>
                 </div>`;
         });
 
-        initialLoadComplete = true;
-
-        if (triggerAlert) {
-            alertAudio.play().catch(err => console.warn("Audio standard interaction block triggered:", err));
-        }
-
-        // Update main dashboard badge layout configurations
+        // Tally global unread count
+        const totalUnread = dynamicFeeds.filter(f => feedUnread(f)).length;
         const totalBadgeElement = document.getElementById('chat-total-badge');
-        if (aggregateUnread > 0) {
-            totalBadgeElement.textContent = aggregateUnread;
+
+        if (totalUnread > 0) {
+            totalBadgeElement.textContent = totalUnread;
             totalBadgeElement.classList.add('active');
         } else {
             totalBadgeElement.classList.remove('active');
         }
 
+        // Trigger Audio if new unread appears after initial load
+        if (totalUnread > lastKnownUnreadCount && initialLoadComplete) {
+            alertAudio.play().catch(e => console.warn("Browser blocked audio play:", e));
+        }
+        lastKnownUnreadCount = totalUnread;
+
+        // Render HTML
+        const listContainer = document.getElementById('chat-list-pane');
         if (inboxHtml) {
             listContainer.innerHTML = inboxHtml;
         } else {
             listContainer.innerHTML = `<div class="empty-state" style="margin: 24px; border: none;"><i class="fa-solid fa-message"></i>No support chats available.</div>`;
         }
-
-        // Real-time render loop inside active dialogue structures
-        if (activeChatId && chats[activeChatId]) {
-            renderChatHistory(chats[activeChatId].messages || {});
-        }
-    });
+    }
 
     window.toggleChatPanel = () => {
         const pane = document.getElementById('chat-panel-container');
         pane.classList.toggle('active');
+        
+        // Auto-clear active chat badge if reopening while inside a chat
         if (pane.classList.contains('active') && activeChatId) {
-            update(ref(database, `support_chats/${activeChatId}`), { unreadCountAgent: 0 });
+            agentReadState[activeChatId] = Date.now();
+            localStorage.setItem('agentReadState', JSON.stringify(agentReadState));
+            renderChatInbox();
         }
     };
 
@@ -482,15 +495,14 @@
         document.getElementById('chat-back-btn').style.display = 'inline-block';
         document.getElementById('chat-header-title').textContent = clientName;
 
-        update(ref(database, `support_chats/${id}`), { unreadCountAgent: 0 });
+        // Immediately mark this specific user's feed as read locally
+        agentReadState[id] = Date.now();
+        localStorage.setItem('agentReadState', JSON.stringify(agentReadState));
+        renderChatInbox(); 
 
-        get(ref(database, `support_chats/${id}`)).then((snap) => {
-            if (snap.exists()) {
-                renderChatHistory(snap.val().messages || {});
-                const container = document.getElementById('chat-messages-display');
-                container.scrollTop = container.scrollHeight;
-            }
-        });
+        if (chatsData[id]) {
+            renderChatHistory(chatsData[id]);
+        }
     };
 
     window.exitActiveChat = () => {
@@ -501,16 +513,16 @@
         document.getElementById('chat-header-title').textContent = 'Support Inbox';
     };
 
-    function renderChatHistory(messages) {
+    function renderChatHistory(messagesObj) {
         const viewport = document.getElementById('chat-messages-display');
         const trackProximity = viewport.scrollHeight - viewport.scrollTop <= viewport.clientHeight + 80;
 
         let historicalMarkup = '';
-        const indexableMessages = Object.entries(messages).sort((x, y) => (x[1].timestamp || 0) - (y[1].timestamp || 0));
+        const messages = Object.values(messagesObj || {}).sort((a,b) => a.timestamp - b.timestamp);
 
-        indexableMessages.forEach(([_, contents]) => {
-            const selfGenerated = contents.sender === 'agent';
-            const messageClass = selfGenerated ? 'outgoing' : 'incoming';
+        messages.forEach((contents) => {
+            const isSupport = contents.sender !== 'user'; // Support messages align right for the agent
+            const messageClass = isSupport ? 'outgoing' : 'incoming';
             const logTime = contents.timestamp ? new Date(contents.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
             historicalMarkup += `
@@ -530,27 +542,22 @@
 
     window.sendAgentMessage = async () => {
         const textElement = document.getElementById('chat-message-input');
-        const processingString = textElement.value.trim();
-        if (!processingString || !activeChatId) return;
+        const text = textElement.value.trim();
+        if (!text || !activeChatId) return;
 
         textElement.value = '';
+        textElement.focus();
 
-        const dialogueRef = push(ref(database, `support_chats/${activeChatId}/messages`));
-        const activeClock = Date.now();
-
-        const unifiedMessage = {
-            sender: 'agent',
-            text: processingString,
-            timestamp: activeClock
-        };
-
-        await set(dialogueRef, unifiedMessage);
-        await update(ref(database, `support_chats/${activeChatId}`), {
-            lastMessage: processingString,
-            lastSender: 'agent',
-            timestamp: activeClock,
-            unreadCountCustomer: 1
+        // Push directly to the selected user's chat node as 'support'
+        await set(push(ref(database, `chats/${activeChatId}`)), {
+            sender: 'support',
+            text: text,
+            timestamp: Date.now()
         });
+
+        // Update local read state so our own out-going message doesn't trigger the unread badge
+        agentReadState[activeChatId] = Date.now();
+        localStorage.setItem('agentReadState', JSON.stringify(agentReadState));
     };
 
     window.handleChatKeyDown = (event) => {
@@ -559,7 +566,7 @@
         }
     };
 
-    // ============ UI Logic ============
+    // ============ General UI & Tabs Logic ============
     window.showLoading = (text, sub) => {
         document.getElementById('loading-text').textContent = text;
         document.getElementById('loading-subtext').textContent = sub;
@@ -665,10 +672,8 @@
         };
 
         try {
-            // 1. Save to Firebase
             await set(push(ref(database, 'orders')), payload);
 
-            // 2. Dispatch to Shipday
             const sdRes = await fetch("https://api.shipday.com/orders", {
                 method: "POST",
                 headers: { "Authorization": `Basic ${SHIPDAY_KEY}`, "Content-Type": "application/json" },
@@ -677,7 +682,6 @@
 
             if (!sdRes.ok) throw new Error("Shipday Dispatch Failed: " + sdRes.status);
 
-            // 3. Send WhatsApp dispatch notification to recipient
             if (receiverPhone) {
                 await sendWhatsAppAPI(receiverPhone, 'dispatch', {
                     recipientName: receiverName,
