@@ -123,6 +123,49 @@
         /* WhatsApp notification pill */
         .wa-pill { display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
         .wa-pill i { font-size: 10px; }
+
+        /* Floating Chat UI Additions */
+        .chat-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: #09090b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 3001; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .chat-btn:hover { transform: scale(1.06); background: #18181b; }
+        .chat-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; width: 22px; height: 22px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2.5px solid #fafafa; box-shadow: 0 2px 6px rgba(239,68,68,0.4); }
+        .chat-badge.active { display: flex; }
+        
+        .chat-container { position: fixed; bottom: 105px; right: 30px; width: 380px; height: 560px; background: #fff; border-radius: 24px; box-shadow: 0 12px 48px rgba(0,0,0,0.16); border: 1px solid #e4e4e7; display: none; flex-direction: column; z-index: 3000; overflow: hidden; transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(16px); opacity: 0; }
+        .chat-container.active { display: flex; transform: translateY(0); opacity: 1; }
+        
+        .chat-header { background: #09090b; color: #fff; padding: 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #18181b; }
+        .chat-header h3 { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+        .chat-header-btn { background: transparent; border: none; color: #a1a1aa; cursor: pointer; font-size: 16px; transition: color 0.15s; display: flex; align-items: center; justify-content: center; }
+        .chat-header-btn:hover { color: #fff; }
+        
+        .chat-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; background: #f4f4f5; }
+        .chat-pane { display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+        
+        .chat-user-item { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid #f4f4f5; background: #fff; cursor: pointer; transition: background 0.15s; }
+        .chat-user-item:hover { background: #fafafa; }
+        .chat-user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e4e4e7; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #18181b; font-size: 13px; text-transform: uppercase; flex-shrink: 0; }
+        .chat-user-info { flex: 1; min-width: 0; }
+        .chat-user-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .chat-user-name { font-size: 13.5px; font-weight: 600; color: #09090b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-user-time { font-size: 11px; color: #a1a1aa; }
+        .chat-user-preview { font-size: 12px; color: #71717a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
+        .chat-user-badge { background: #3b82f6; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+        
+        .chat-messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-msg-row { display: flex; width: 100%; }
+        .chat-msg-row.incoming { justify-content: flex-start; }
+        .chat-msg-row.outgoing { justify-content: flex-end; }
+        .chat-bubble { max-width: 78%; padding: 12px 16px; font-size: 13px; line-height: 1.4; border-radius: 16px; word-break: break-word; position: relative; }
+        .chat-msg-row.incoming .chat-bubble { background: #fff; color: #18181b; border-bottom-left-radius: 4px; border: 1px solid #e4e4e7; }
+        .chat-msg-row.outgoing .chat-bubble { background: #09090b; color: #fff; border-bottom-right-radius: 4px; }
+        .chat-msg-time { font-size: 10px; color: #a1a1aa; margin-top: 5px; display: block; text-align: right; }
+        .chat-msg-row.outgoing .chat-msg-time { color: #71717a; }
+        
+        .chat-input-container { background: #fff; padding: 14px 16px; border-top: 1px solid #e4e4e7; display: flex; align-items: center; gap: 10px; }
+        .chat-input-field { flex: 1; border: 1.5px solid #e4e4e7; border-radius: 12px; padding: 11px 14px; font-size: 13px; outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.15s; }
+        .chat-input-field:focus { border-color: #3b82f6; }
+        .chat-send-btn { background: #09090b; color: #fff; border: none; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s; }
+        .chat-send-btn:hover { background: #27272a; }
     </style>
 </head>
 <body>
@@ -279,10 +322,45 @@
     </div> 
 </div> 
 
+<!-- Floating Support Chat Container Additions -->
+<div class="chat-btn" id="chat-floating-btn" onclick="toggleChatPanel()">
+    <i class="fa-solid fa-comments"></i>
+    <div class="chat-badge" id="chat-total-badge">0</div>
+</div>
+
+<div class="chat-container" id="chat-panel-container">
+    <div class="chat-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="chat-header-btn" id="chat-back-btn" onclick="exitActiveChat()" style="display: none; margin-right: 4px;">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h3 id="chat-header-title">Support Inbox</h3>
+        </div>
+        <button class="chat-header-btn" onclick="toggleChatPanel()">
+            <i class="fa-solid fa-xmark" style="font-size: 18px;"></i>
+        </button>
+    </div>
+    <div class="chat-body">
+        <!-- Conversation Inbox Pane -->
+        <div class="chat-pane" id="chat-list-pane">
+            <div class="empty-state" style="margin: 24px; border: none;"><i class="fa-solid fa-message"></i>No support chats available.</div>
+        </div>
+        
+        <!-- Active Chat Feed Pane -->
+        <div class="chat-pane" id="chat-window-pane" style="display: none;">
+            <div class="chat-messages-area" id="chat-messages-display"></div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-message-input" class="chat-input-field" placeholder="Write a message..." onkeydown="handleChatKeyDown(event)">
+                <button class="chat-send-btn" onclick="sendAgentMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-    import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, push, set, get, update, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // --- YOUR CREDENTIALS ---
     const firebaseConfig = {
@@ -307,6 +385,179 @@
     const provider = new GoogleAuthProvider();
 
     let currentAgent = null;
+
+    // --- Floating Support Chat States & Logic ---
+    const alertAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-84.wav');
+    let activeChatId = null;
+    let registeredChats = {};
+    let initialLoadComplete = false;
+
+    // Listen to real-time incoming operations inside 'support_chats'
+    onValue(ref(database, 'support_chats'), (snapshot) => {
+        const chats = snapshot.val() || {};
+        let aggregateUnread = 0;
+        let triggerAlert = false;
+
+        const listContainer = document.getElementById('chat-list-pane');
+        let inboxHtml = '';
+
+        // Order the channel feeds by descending order of their active timestamps
+        const dynamicFeeds = Object.entries(chats).sort((x, y) => (y[1].timestamp || 0) - (x[1].timestamp || 0));
+
+        dynamicFeeds.forEach(([id, payload]) => {
+            const missingCount = payload.unreadCountAgent || 0;
+            aggregateUnread += missingCount;
+
+            // Trigger notification rules for incoming requests
+            if (initialLoadComplete && payload.lastSender === 'customer') {
+                if (!registeredChats[id] || registeredChats[id].timestamp < payload.timestamp) {
+                    if (activeChatId !== id || !document.getElementById('chat-panel-container').classList.contains('active')) {
+                        triggerAlert = true;
+                    }
+                }
+            }
+
+            // Sync structural local logs
+            registeredChats[id] = { timestamp: payload.timestamp, unreadCountAgent: missingCount };
+
+            const displayInitials = (payload.customerName || 'C').substring(0, 2);
+            const formattedTime = payload.timestamp ? new Date(payload.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            const internalBadge = missingCount > 0 ? `<div class="chat-user-badge">${missingCount}</div>` : '';
+
+            inboxHtml += `
+                <div class="chat-user-item" onclick="openActiveChat('${id}', '${escapeHtml(payload.customerName || 'Customer')}')">
+                    <div class="chat-user-avatar">${escapeHtml(displayInitials)}</div>
+                    <div class="chat-user-info">
+                        <div class="chat-user-row">
+                            <span class="chat-user-name">${escapeHtml(payload.customerName || 'Customer')}</span>
+                            <span class="chat-user-time">${formattedTime}</span>
+                        </div>
+                        <div class="chat-user-row">
+                            <span class="chat-user-preview">${escapeHtml(payload.lastMessage || '')}</span>
+                            ${internalBadge}
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        initialLoadComplete = true;
+
+        if (triggerAlert) {
+            alertAudio.play().catch(err => console.warn("Audio standard interaction block triggered:", err));
+        }
+
+        // Update main dashboard badge layout configurations
+        const totalBadgeElement = document.getElementById('chat-total-badge');
+        if (aggregateUnread > 0) {
+            totalBadgeElement.textContent = aggregateUnread;
+            totalBadgeElement.classList.add('active');
+        } else {
+            totalBadgeElement.classList.remove('active');
+        }
+
+        if (inboxHtml) {
+            listContainer.innerHTML = inboxHtml;
+        } else {
+            listContainer.innerHTML = `<div class="empty-state" style="margin: 24px; border: none;"><i class="fa-solid fa-message"></i>No support chats available.</div>`;
+        }
+
+        // Real-time render loop inside active dialogue structures
+        if (activeChatId && chats[activeChatId]) {
+            renderChatHistory(chats[activeChatId].messages || {});
+        }
+    });
+
+    window.toggleChatPanel = () => {
+        const pane = document.getElementById('chat-panel-container');
+        pane.classList.toggle('active');
+        if (pane.classList.contains('active') && activeChatId) {
+            update(ref(database, `support_chats/${activeChatId}`), { unreadCountAgent: 0 });
+        }
+    };
+
+    window.openActiveChat = (id, clientName) => {
+        activeChatId = id;
+        document.getElementById('chat-list-pane').style.display = 'none';
+        document.getElementById('chat-window-pane').style.display = 'flex';
+        document.getElementById('chat-back-btn').style.display = 'inline-block';
+        document.getElementById('chat-header-title').textContent = clientName;
+
+        update(ref(database, `support_chats/${id}`), { unreadCountAgent: 0 });
+
+        get(ref(database, `support_chats/${id}`)).then((snap) => {
+            if (snap.exists()) {
+                renderChatHistory(snap.val().messages || {});
+                const container = document.getElementById('chat-messages-display');
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    };
+
+    window.exitActiveChat = () => {
+        activeChatId = null;
+        document.getElementById('chat-list-pane').style.display = 'flex';
+        document.getElementById('chat-window-pane').style.display = 'none';
+        document.getElementById('chat-back-btn').style.display = 'none';
+        document.getElementById('chat-header-title').textContent = 'Support Inbox';
+    };
+
+    function renderChatHistory(messages) {
+        const viewport = document.getElementById('chat-messages-display');
+        const trackProximity = viewport.scrollHeight - viewport.scrollTop <= viewport.clientHeight + 80;
+
+        let historicalMarkup = '';
+        const indexableMessages = Object.entries(messages).sort((x, y) => (x[1].timestamp || 0) - (y[1].timestamp || 0));
+
+        indexableMessages.forEach(([_, contents]) => {
+            const selfGenerated = contents.sender === 'agent';
+            const messageClass = selfGenerated ? 'outgoing' : 'incoming';
+            const logTime = contents.timestamp ? new Date(contents.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+            historicalMarkup += `
+                <div class="chat-msg-row ${messageClass}">
+                    <div class="chat-bubble">
+                        ${escapeHtml(contents.text)}
+                        <span class="chat-msg-time">${logTime}</span>
+                    </div>
+                </div>`;
+        });
+
+        viewport.innerHTML = historicalMarkup;
+        if (trackProximity) {
+            viewport.scrollTop = viewport.scrollHeight;
+        }
+    }
+
+    window.sendAgentMessage = async () => {
+        const textElement = document.getElementById('chat-message-input');
+        const processingString = textElement.value.trim();
+        if (!processingString || !activeChatId) return;
+
+        textElement.value = '';
+
+        const dialogueRef = push(ref(database, `support_chats/${activeChatId}/messages`));
+        const activeClock = Date.now();
+
+        const unifiedMessage = {
+            sender: 'agent',
+            text: processingString,
+            timestamp: activeClock
+        };
+
+        await set(dialogueRef, unifiedMessage);
+        await update(ref(database, `support_chats/${activeChatId}`), {
+            lastMessage: processingString,
+            lastSender: 'agent',
+            timestamp: activeClock,
+            unreadCountCustomer: 1
+        });
+    };
+
+    window.handleChatKeyDown = (event) => {
+        if (event.key === 'Enter') {
+            window.sendAgentMessage();
+        }
+    };
 
     // ============ UI Logic ============
     window.showLoading = (text, sub) => {
@@ -447,10 +698,7 @@
     };
 
     // ============ WhatsApp API Logic ============
-    // messageType: 'dispatch' | 'collected'
-    // data: { recipientName, orderNumber }
     window.sendWhatsAppAPI = async (phone, messageType, data = {}) => {
-        // Normalise to SA format (27XXXXXXXXX)
         let cleanPhone = phone.replace(/\D/g, '');
         if (cleanPhone.startsWith('0')) {
             cleanPhone = '27' + cleanPhone.substring(1);
@@ -508,7 +756,6 @@ Thank you so much for choosing *Pace Logistics* — we truly appreciate your tru
             const resData = await response.json();
             if (!response.ok) {
                 console.warn("WhatsApp API failed:", resData.error?.message);
-                // Non-blocking — don't throw, just warn
             }
             return true;
         } catch (error) {
@@ -667,12 +914,9 @@ Thank you so much for choosing *Pace Logistics* — we truly appreciate your tru
         }
     };
 
-    // Now accepts phone, name and orderNumber directly from the rendered card
-    // to avoid an extra Firebase read
     window.markAsCollected = async (orderId, customerPhone, customerName, orderNumber) => {
         showLoading("Updating...", "Marking as collected & sending thank you message");
         try {
-            // 1. Update Firebase
             const orderRef = ref(database, `orders/${orderId}`);
             await update(orderRef, { 
                 status: 'collected', 
@@ -680,7 +924,6 @@ Thank you so much for choosing *Pace Logistics* — we truly appreciate your tru
                 statusUpdatedAt: Date.now()
             });
 
-            // 2. Send WhatsApp thank-you message
             if (customerPhone) {
                 await sendWhatsAppAPI(customerPhone, 'collected', {
                     recipientName: customerName,
@@ -690,7 +933,6 @@ Thank you so much for choosing *Pace Logistics* — we truly appreciate your tru
 
             hideLoading();
             
-            // 3. Update UI instantly — no extra DB read needed
             const card = document.getElementById(`agent-card-${orderId}`);
             if (card) {
                 const btn = card.querySelector('.btn-submit');
